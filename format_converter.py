@@ -26,6 +26,14 @@ class Converter:
         satoshi_amount: str = hex(amount)[2:]
         print(int(satoshi_amount,16).to_bytes(8, "little").hex())
         return int(satoshi_amount,16).to_bytes(8, "little").hex()
+
+
+    def little_endian_to_int(self, b: bytes) -> int:
+        return int.from_bytes(b, 'little')
+
+
+    def int_to_little_endian(self, n: int, length: int) -> bytes:
+        return n.to_bytes(length, 'little')
     
 
     def encode_base58(self, s: bytes) -> str:

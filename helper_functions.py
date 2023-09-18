@@ -18,7 +18,6 @@ def read_varint(stream: bytearray) -> int:
         return i
 
 def encode_varint(i):
-    '''encodes an integer as a varint'''
     if i < 0xfd:
         return bytes([i])
     elif i < 0x10000:

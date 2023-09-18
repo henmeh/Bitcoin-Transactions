@@ -10,7 +10,7 @@ hash = Hashes()
 
 class Tx:
 
-    def __init__(self, version, tx_ins, tx_outs, locktime, testnet=False):
+    def __init__(self, version: int, tx_ins: list, tx_outs: list, locktime: int, testnet: bool=False) -> "Tx":
         self.version = version
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
@@ -18,7 +18,7 @@ class Tx:
         self.testnet = testnet
     
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         tx_ins = ''
         for tx_in in self.tx_ins:
             tx_ins += tx_in.__repr__() + '\n'
@@ -28,16 +28,16 @@ class Tx:
         return f'tx: {self.id()}\nversion: {self.version}\ntx_ins:\n{tx_ins}tx_outs:\n{tx_outs}locktime: {self.locktime}'
 
 
-    def id(self):
+    def id(self) -> str:
         return self.hash().hex()
     
 
-    def hash(self):
+    def hash(self) -> bytes:
         return hash.hash256(self.serialize())[::-1]
 
 
     @classmethod
-    def parse(cls, stream, testnet=False):
+    def parse(cls, stream: bytes, testnet: bool=False) -> "Tx":
         version = converter.little_endian_to_int(stream.read(4))
         num_inputs = read_varint(stream)
         inputs = []
@@ -52,8 +52,7 @@ class Tx:
         return cls(version, inputs, outputs, locktime, testnet=testnet)
     
 
-    def serialize(self):
-        '''Returns the byte serialization of the transaction'''
+    def serialize(self) -> bytes:
         result = converter.int_to_little_endian(self.version, 4)
         result += encode_varint(len(self.tx_ins))
         for tx_in in self.tx_ins:
@@ -62,10 +61,11 @@ class Tx:
         for tx_out in self.tx_outs:
             result += tx_out.serialize()
         result += converter.int_to_little_endian(self.locktime, 4)
+        print(result.hex())
         return result
 
     
-    def fee(self, testnet=False):
+    def fee(self, testnet: bool=False) -> int:
         input_sum = 0
         output_sum = 0
         for tx_in in self.tx_ins:
@@ -77,61 +77,68 @@ class Tx:
 
 class TxIn:
 
-    def __init__(self, prev_tx, prev_index, script_sig=None, sequence=0xffffffff):
-        self.prev_tx = prev_tx
-        self.prev_index = prev_index
+    def __init__(self, prev_tx: bytes, prev_index: int, script_sig: bytes=None, sequence: int=0xffffffff) -> "TxIn":
+        self.prev_tx: bytes = prev_tx
+        self.prev_index: int = prev_index
         if script_sig is None:
-            self.script_sig = Script()
+            self.script_sig: "Script" = Script()
         else:
-            self.script_sig = script_sig
-        self.sequence = sequence
+            self.script_sig: bytes = script_sig
+        self.sequence: int = sequence
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.prev_tx.hex()}:{self.prev_index}'
 
 
     @classmethod
-    def parse(cls, stream):
-        prev_tx = stream.read(32)[::-1]
-        prev_index = converter.little_endian_to_int(stream.read(4))
-        script_sig = Script.parse(stream)
-        sequence = converter.little_endian_to_int(stream.read(4))
+    def parse(cls, stream: bytes) -> "TxIn":
+        prev_tx: bytes = stream.read(32)[::-1]
+        prev_index: int = converter.little_endian_to_int(stream.read(4))
+        script_sig: bytes = Script.parse(stream)
+        sequence: int = converter.little_endian_to_int(stream.read(4))
         return cls(prev_tx, prev_index, script_sig, sequence)
     
 
-    def serialize(self):
-        result = self.prev_tx[::-1]
+    def serialize(self) -> bytes:
+        result: bytes = self.prev_tx[::-1]
         result += converter.int_to_little_endian(self.prev_index, 4)
         result += self.script_sig.serialize()
         result += converter.int_to_little_endian(self.sequence, 4)
         return result
 
-    
-    def value(self, testnet=False):
-        tx = self.fetch_tx(testnet=testnet)
-        return tx.tx_outs[self.prev_index].amount
-
 
 class TxOut:
 
-    def __init__(self, amount, script_pubkey):
-        self.amount = amount
-        self.script_pubkey = script_pubkey
+    def __init__(self, amount: int, script_pubkey: bytes) -> "TxOut":
+        self.amount: int = amount
+        self.script_pubkey: bytes = script_pubkey
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.amount}:{self.script_pubkey}'
 
 
     @classmethod
-    def parse(cls, stream):
-        amount = converter.little_endian_to_int(stream.read(8))
-        script_pubkey = Script.parse(stream)
+    def parse(cls, stream: bytes) -> "TxOut":
+        amount: int = converter.little_endian_to_int(stream.read(8))
+        script_pubkey: bytes = Script.parse(stream)
         return cls(amount, script_pubkey)
     
 
-    def serialize(self):  # <1>
-        result = converter.int_to_little_endian(self.amount, 8)
+    def serialize(self) -> bytes:
+        result: bytes = converter.int_to_little_endian(self.amount, 8)
         result += self.script_pubkey.serialize()
         return result
+    
+
+
+def test_tx_parser_input_tx():
+    from io import BytesIO
+ 
+    raw_tx = bytes.fromhex('0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac19430600')
+    stream = BytesIO(raw_tx)
+    tx = Tx.parse(stream)
+    print(tx)
+    
+test_tx_parser_input_tx()

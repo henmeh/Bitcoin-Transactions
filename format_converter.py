@@ -5,7 +5,7 @@ class Converter:
 
     def __init__(self):
         self.BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-        self.hash256 = Hashes()
+        self.hash = Hashes()
 
 
     def convert_string_to_hex(self, string: str) -> str:
@@ -63,6 +63,6 @@ class Converter:
             num += self.BASE58_ALPHABET.index(c)
         combined = num.to_bytes(25, byteorder='big')
         checksum = combined[-4:]
-        if self.hash256(combined[:-4])[:4] != checksum:
+        if self.hash.hash256(combined[:-4])[:4] != checksum:
             raise ValueError('bad address: {} {}'.format(checksum, self.hash256.hash256(combined[:-4])[:4]))
         return combined[1:-4]

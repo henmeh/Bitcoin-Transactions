@@ -46,7 +46,7 @@ class Tx:
         if stream.read(1) == b'\x00':
             parse_method = cls.parse_segwit
         else:
-            parse_method = cls.parse.legacy
+            parse_method = cls.parse_legacy
         stream.seek(-5,1)
         
         return parse_method(stream, is_testnet=is_testnet)
@@ -231,7 +231,7 @@ class TxIn:
 
     def __repr__(self) -> str:
         
-        return f'{self.prev_tx.hex()}:{self.prev_index}'
+        return f'{self.prev_tx_id.hex()}:{self.prev_index}'
 
 
     @classmethod
@@ -245,7 +245,7 @@ class TxIn:
     
 
     def serialize(self) -> bytes:
-        tx_in: bytes = self.prev_tx[::-1]
+        tx_in: bytes = self.prev_tx_id[::-1]
         tx_in += converter.int_to_little_endian(self.prev_index, 4)
         tx_in += self.script_sig.serialize()
         tx_in += converter.int_to_little_endian(self.sequence, 4)

@@ -9,6 +9,10 @@ LOGGER = getLogger(__name__)
 
 converter = Converter()
 
+def p2pkh_script(hash160: str) -> "Script":
+    
+    return Script([0x76, 0xa9, hash160, 0x88, 0xac])
+
 
 class Script:
 

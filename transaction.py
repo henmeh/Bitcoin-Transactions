@@ -157,7 +157,7 @@ class Tx:
                     script_sig = tx_in.script_pubkey(self.is_testnet)
             else:
                 script_sig = None
-        sig_hash += TxIn(prev_tx=tx_in.prev_tx, prev_index=tx_in.prev_index, script_sig=script_sig, sequence=tx_in.sequence).serialize()
+        sig_hash += TxIn(prev_tx_id=tx_in.prev_tx_id, prev_index=tx_in.prev_index, script_sig=script_sig, sequence=tx_in.sequence).serialize()
         sig_hash += encode_varint(len(self.tx_outs))
         for tx_out in self.tx_outs:
             sig_hash += tx_out.serialize()

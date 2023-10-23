@@ -1,57 +1,53 @@
 from bitcoin_transaction_helpers import ECDSA, Bitcoin, Hashes
+from transaction import Tx, TxIn, TxOut
+from script import Script, p2pkh_script
+from format_converter import Converter
+from io import BytesIO
+
 
 # the elliptical curve bitcoin is using
 curve = ECDSA("secp256k1")
 bitcoin = Bitcoin()
 hash = Hashes()
+converter = Converter()
+
 
 
 def main():
 
-    #doing some tests, will be deleted when a real transaction goes through
-    from format_converter import Converter
-    from script import p2pkh_script
-    from transaction import TxIn, TxOut, Tx
-    from io import BytesIO
-    
-    converter = Converter()
-    
-    prev_tx = bytes.fromhex('0d6fe5213c0b3291f208cba8bfb59b7476dffacc4e5cb66f6eb20a080843a299')
-    prev_index = 13
-    tx_in = TxIn(prev_tx, prev_index)
-    tx_outs = []
-    change_amount = int(0.33*100000000)
-    change_h160 = converter.decode_base58('mzx5YhAH9kNHtcN481u6WkjeHjYtVeKVh2')
-    change_script = p2pkh_script(change_h160)
-    change_output = TxOut(amount=change_amount, script_pubkey=change_script)
-    target_amount = int(0.1*100000000)
-    target_h160 = converter.decode_base58('mnrVtF8DWjMu839VW3rBfgYaAfKk8983Xf')
-    target_script = p2pkh_script(target_h160)
-    target_output = TxOut(amount=target_amount, script_pubkey=target_script)
-    tx_obj = Tx(1, [tx_in], [change_output, target_output], 0, True)
-    print(tx_obj)
+    private_key_wif = "cTwMnFm86YFcQRqzNUfV1ygpKPU78NUqW8m4t3oqWmeEs1gcfDo1"
+    private_key_int = converter.convert_private_key_wif_to_int(private_key_wif)
 
-    raw_tx = bytes.fromhex('0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac19430600')
-    stream = BytesIO(raw_tx)
-    tx = Tx.parse(stream)
-    print(tx.version == 1)
+    print(private_key_int)
 
-    raw_tx = bytes.fromhex('0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac19430600')
-    stream = BytesIO(raw_tx)
-    tx = Tx.parse(stream)
-    print(tx.serialize() == raw_tx)
+    version = 1
+    tx_id_to_spent = 'ca0bf9d6344c56bac32c0e707eb853d162ee6376b7a5d062754ba205281f69d5'
+    tx_index_to_spent = 1
+    script_pub_key_to_spent = '76a91488fd87526e486c18b2f232df6cb15109a45e9dac88ac'
+    amount_to_spent = 9000
+    receiver_address = "mhqPXXnKfzhNUk8DNjSkYhwe81u3PTPDut"
+    locktime = 0xffffffff
 
-    raw_tx = bytes.fromhex('0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac19430600')
-    stream = BytesIO(raw_tx)
-    tx = Tx.parse(stream)
-    print(len(tx.tx_ins) == 1)
-    want = bytes.fromhex('d1c789a9c60383bf715f3f6ad9d14b91fe55f3deb369fe5d9280cb1a01793f81')
-    print(tx.tx_ins[0].prev_tx_id == want)
-    print(tx.tx_ins[0].prev_index == 0)
-    want = bytes.fromhex('6b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a')
-    print(tx.tx_ins[0].script_sig.serialize() == want)
-    print(tx.tx_ins[0].sequence == 0xfffffffe)
-    
+    # create an unsigned raw transaction
+    # step 1: create the transaction input
+    # the scriptSig must be the scriptPubKey from the transaction to spent from
+    script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent, script_sig=script_sig)
+    #print(transaction_input.serialize().hex())
+    # step 2: create the transaction output -> will be a new p2pkh scriptPubKey
+    script_pubkey_receiver = p2pkh_script(converter.decode_base58(receiver_address))
+    #print(script_pubkey_receiver.serialize().hex())
+    transaction_output = TxOut(amount_to_spent, script_pubkey_receiver)
+    #print(transaction_output.serialize().hex())
+    unsigned_raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
+    print(unsigned_raw_transaction.serialize().hex())
+
+    # step 2: calculate the sig_hash_legacy for this legacy transaction
+    sig_hash_legacy = unsigned_raw_transaction.sig_hash_legacy(1)
+    print(sig_hash_legacy)
+
+    # step 3: sign the sig hash with your private key
+    #signature = unsigned_raw_transaction.sign_input(1, PRIVATE_KEY)
 
 if __name__ == "__main__":
     main()

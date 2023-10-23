@@ -3,6 +3,7 @@ from format_converter import Converter
 from helper_functions import read_varint, encode_varint, SIGHASH_ALL
 from script import Script, p2pkh_script
 from hash_calculation import Hashes
+#from ecdsa_calculation import 
 
 
 converter = Converter()
@@ -219,7 +220,7 @@ class Tx:
 
 class TxIn:
 
-    def __init__(self, prev_tx_id: str, prev_index: int, script_sig: Script=None, sequence: int=0xffffffff) -> "TxIn":
+    def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, sequence: int=0xffffffff) -> "TxIn":
         self.prev_tx_id = prev_tx_id
         self.prev_index = prev_index
         if script_sig is None:
@@ -245,7 +246,7 @@ class TxIn:
     
 
     def serialize(self) -> bytes:
-        tx_in: bytes = self.prev_tx_id[::-1]
+        tx_in = self.prev_tx_id[::-1]
         tx_in += converter.int_to_little_endian(self.prev_index, 4)
         tx_in += self.script_sig.serialize()
         tx_in += converter.int_to_little_endian(self.sequence, 4)

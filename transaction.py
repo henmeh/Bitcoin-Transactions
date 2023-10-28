@@ -3,11 +3,13 @@ from format_converter import Converter
 from helper_functions import read_varint, encode_varint, SIGHASH_ALL
 from script import Script, p2pkh_script
 from hash_calculation import Hashes
-#from ecdsa_calculation import 
+from bitcoin_transaction_helpers import ECDSA, Bitcoin
 
 
 converter = Converter()
 hash = Hashes()
+curve = ECDSA("secp256k1")
+bitcoin = Bitcoin()
 
 class Tx:
 
@@ -147,15 +149,13 @@ class Tx:
         return input_sum - output_sum
 
 
-    def sig_hash_legacy(self, input_index: int, redeem_script: str=None) -> int:
+    def sig_hash_legacy(self, input_index: int, redeem_script: Script=None) -> int:
         sig_hash = converter.int_to_little_endian(self.version, 4)
         sig_hash += encode_varint(len(self.tx_ins))
         for index, tx_in in enumerate(self.tx_ins):
             if index == input_index:
                 if redeem_script:
                     script_sig = redeem_script
-                else:
-                    script_sig = tx_in.script_pubkey(self.is_testnet)
             else:
                 script_sig = None
         sig_hash += TxIn(prev_tx_id=tx_in.prev_tx_id, prev_index=tx_in.prev_index, script_sig=script_sig, sequence=tx_in.sequence).serialize()
@@ -207,11 +207,12 @@ class Tx:
         return self._hash_outputs
 
 
-    def sign_input(self, input_index: int, private_key: str) -> bool:
-        sig_hash = self.sig_hash(input_index)
-        der = private_key.sign(sig_hash).der()
+    def sign_input(self, input_index: int, private_key: str, redeem_script) -> bool:
+        sig_hash = self.sig_hash_legacy(input_index, redeem_script)
+        r, s = curve.sign_data(sig_hash, private_key)
+        der = curve.der(r, s)
         signature = der + SIGHASH_ALL.to_bytes(1, 'big')
-        sec = private_key.point.sec()
+        sec = bitcoin.calculate_public_key(private_key)
         script_sig = Script([signature, sec])
         self.tx_ins[input_index].script_sig = script_sig
         

@@ -72,7 +72,7 @@ class ECDSA:
         if (s > self.max_points_int / 2):
             s = self.max_points_int - s
         
-        return (r, s)
+        return r, s
     
     def der(self, r: int, s: int) -> bytes:
         

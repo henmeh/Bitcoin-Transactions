@@ -1,6 +1,6 @@
 from bitcoin_transaction_helpers import ECDSA, Bitcoin, Hashes
 from transaction import Tx, TxIn, TxOut
-from script import Script, p2pkh_script
+from script import Script, p2pkh_script, p2sh_script
 from format_converter import Converter
 from io import BytesIO
 from unittest import TestCase
@@ -35,8 +35,32 @@ def test_for_p2pkh_transaction():
     print(raw_transaction.serialize().hex() == "0100000001d5691f2805a24b7562d0a5b77663ee62d153b87e700e2cc3ba564c34d6f90bca010000006a473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207d788ef22d22ba7373a3ab2f70cea2475c75fb8bc78a2c4d71fb9d05fd724d3a012103c4f5245042eab9fe9fcd5c575f0dbcb2713b796bf62194dab3c4515ed1f9eec8ffffffff0128230000000000001976a914196ccd42e9392eba4baeccc27046373e9c0e91e388acffffffff")
 
 
+def test_for_p2sh_transaction():
+    version = 1
+    tx_id_to_spent = '99d237f85942a1fcdeee2c731cb40b1ba475a66bbff580bc7a20a4f11cf32c23'
+    tx_index_to_spent = 0
+    amount_to_spent = 8000
+    locktime = 0xffffffff
+    secret = "this is base58 yall"
+    secret_hex = converter.convert_string_to_hex(secret)
+    original_script = Script([bytes.fromhex(secret_hex), 0x87])
+    original_script_hex = original_script.serialize().hex()[2:] #serialize will give back also the length of the total script, but this is not part of the hashing data  
+    original_script_hash160 = hash.hash160(bytes.fromhex(original_script_hex))
+    ps2h = p2sh_script(original_script_hash160)
+    
+    script_sig = Script([bytes.fromhex(secret_hex), bytes.fromhex(original_script_hex)])
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent, script_sig=script_sig)
+    
+    transaction_output = TxOut(amount_to_spent, ps2h)
+    raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
+
+    print(raw_transaction.serialize().hex() == "0100000001232cf31cf1a4207abc80f5bf6ba675a41b0bb41c732ceedefca14259f837d299000000002a1374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff01401f00000000000017a91463b256137edbbaaad52286528c4dd75a393427bc87ffffffff")
+
+
+
 def main():
     test_for_p2pkh_transaction()
+    test_for_p2sh_transaction()
 
 
 if __name__ == "__main__":

@@ -25,11 +25,11 @@ def main():
     receiver_address = "mhqPXXnKfzhNUk8DNjSkYhwe81u3PTPDut"
     locktime = 0xffffffff
 
-    # create an unsigned raw transaction
+    # create a raw transaction
     # step 1: create the transaction input
     transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent)
     
-    # step 2: create the transaction output -> will be a new p2pkh scriptPubKey
+    # step 2: create the transaction output
     script_pubkey_receiver = p2pkh_script(converter.decode_base58(receiver_address))
     transaction_output = TxOut(amount_to_spent, script_pubkey_receiver)
     raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)

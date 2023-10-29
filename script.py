@@ -13,13 +13,6 @@ def p2pkh_script(hash160: bytes) -> "Script":
 def p2sh_script(hash160: bytes) -> "Script":
     return Script([0xa9, hash160, 0x87])
 
-    
-    #    original_script: str = f"{hex(len(secret_hex) // 2)}{secret_hex + '87'}"[2:]
-    #    original_script_hash160: str = self.hash.hash160(original_script)
-    #    p2sh_script: str = f"a9{hex(len(original_script_hash160) // 2)[2:]}{original_script_hash160}87"   #
-
-    #    return (original_script, p2sh_script, secret_hex)
-
 
 class Script:
 

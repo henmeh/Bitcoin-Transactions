@@ -4,7 +4,6 @@ from script import Script, p2sh_script
 from transaction import TxIn, TxOut, Tx
 from io import BytesIO
 
-# the elliptical curve bitcoin is using
 curve = ECDSA("secp256k1")
 hash = Hashes()
 converter = Converter()

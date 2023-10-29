@@ -76,17 +76,3 @@ class Bitcoin:
         script_pubkey = bytes([witver + 0x50 if witver else 0, len(witprog)] + witprog)
 
         return script_pubkey.hex()
-         
-
-    def calculate_public_key(self, private_key: int, compressed: bool=True) -> bytes:
-
-        public_key_x, public_key_y = self.curve.ec_multiply(private_key)
-
-        if compressed:
-            if public_key_y % 2 == 0:
-                return b'\x02' + public_key_x.to_bytes(32, 'big')
-            else:
-                return b'\x03' + public_key_x.to_bytes(32, 'big')
-        else:
-            # if non-compressed, starts with b'\x04' followod by self.x and then self.y
-            return b'\x04' + public_key_x.to_bytes(32, 'big') + public_key_y.to_bytes(32, 'big')

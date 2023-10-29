@@ -6,6 +6,10 @@ from op import OP_CODE_NAMES
 converter = Converter()
 
 
+def p2pk_script(pub_key: bytes) -> "Script":
+    return Script([pub_key, 0xac])
+    
+
 def p2pkh_script(hash160: bytes) -> "Script":
     return Script([0x76, 0xa9, hash160, 0x88, 0xac])
 

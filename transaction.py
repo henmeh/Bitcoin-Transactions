@@ -212,7 +212,7 @@ class Tx:
         r, s = curve.sign_data(sig_hash, private_key)
         der = curve.der(r, s)
         signature = der + SIGHASH_ALL.to_bytes(1, 'big')
-        sec = bitcoin.calculate_public_key(private_key)
+        sec = curve.calculate_public_key(private_key)
         script_sig = Script([signature, sec])
         self.tx_ins[input_index].script_sig = script_sig
         

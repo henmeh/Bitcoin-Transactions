@@ -4,31 +4,28 @@ from script import Script, p2sh_script
 from transaction import TxIn, TxOut, Tx
 from io import BytesIO
 
-curve = ECDSA("secp256k1")
+curve = ECDSA('secp256k1')
 hash = Hashes()
 converter = Converter()
 
 def main():
 
-    private_key_wif = "cNui4R368FDxHB75eZv59omoHXNtTH491XANtqvMCncNMbe4W8rs"
+    private_key_wif = 'cV6EkdS8sGkZ8Y68ZnpRDhaG33992y8jn5mwhvKs1x1DyjkjNRYr'
     private_key_int = converter.convert_private_key_wif_to_int(private_key_wif)
     version = 1
-    tx_id_to_spent = '471a6dad40934c01dbdcb1a5af7336a962a0f532800f5966e4991573f3db4910'
+    tx_id_to_spent = 'bef5dc9b6a59dae3d2998af4c6d934b24fe6e45ac318b7523cdcdcd233728973'
     tx_index_to_spent = 1
-    script_pub_key_to_spent = '76a91421fc4fc37cbdffce0d9aadad2da14aadbbcb860788ac'
+    script_pub_key_to_spent = '76a914ad49ea957570d4c831ed6ea47a7092eb8a736aa488ac'
     amount_to_spent = 9000
     locktime = 0xffffffff
 
     # now we build the script we want to sent the funds   
-    secret = "we make it visible"
+    secret = "this is base58 yall"
     secret_hex = converter.convert_string_to_hex(secret)
-    #original_script = Script([bytes.fromhex(secret_hex), 0x87])
-    #original_script_2 = original_script.serialize().hex()
-    #print(original_script_serialized)
-
-    original_script_2 = f"{hex(len(secret_hex) // 2)}{secret_hex + '87'}"[2:]
-    original_script_hash160 = hash.hash160(original_script_2.encode())
-
+    original_script = Script([bytes.fromhex(secret_hex), 0x87])
+    original_script_hex = original_script.serialize().hex()[2:] #serialize will give back also the length of the total script, but this is not part of the hashing data  
+    original_script_hash160 = hash.hash160(bytes.fromhex(original_script_hex))
+    
     # create a raw transaction
     # step 1: create the transaction input
     transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent)
@@ -43,36 +40,27 @@ def main():
     script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
     raw_transaction.sign_input(0, private_key_int, script_sig)
 
-    print("This is your signed raw p2sh transaction")
+    print("This is your signed raw p2sh transaction to lock funds to a p2sh")
     print(raw_transaction.serialize().hex())
     
     # after sending the signed raw transaction we have funds locked to our secret
-    # calculating the scriptSig for spending the funds locked to our secret
     version = 1
-    tx_id_to_spent = '23a22f69bddf1ca01ee4745b3cedbcb71fa50580b361c3b379b6c749d27ea88f'
+    tx_id_to_spent = '99d237f85942a1fcdeee2c731cb40b1ba475a66bbff580bc7a20a4f11cf32c23'
     tx_index_to_spent = 0
     amount_to_spent = 8000
     locktime = 0xffffffff
-    script_sig = original_script_2.encode()
-
+    
     # create a raw transaction
     # step 1: create the transaction input
-    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent, script_sig=Script([bytes.fromhex(secret_hex), 0x87]))
+    script_sig = Script([bytes.fromhex(secret_hex), bytes.fromhex(original_script_hex)])
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent, script_sig=script_sig)
 
     # step 2: create the transaction output 
     transaction_output = TxOut(amount_to_spent, ps2h)
     raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
 
-    # step 3: sign the sig hash with your private key
-    # the scriptSig must be the scriptPubKey from the transaction to spent from
-    #script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
-    #raw_transaction.sign_input(0, private_key_int, script_sig)
-
-    print("This is your signed raw p2sh transaction")
+    print("This is your signed raw p2sh transaction to spend a p2sh utxo")
     print(raw_transaction.serialize().hex())
-    
-
-
 
 
 if __name__ == "__main__":

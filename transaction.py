@@ -219,6 +219,17 @@ class Tx:
         return True
     
 
+    def sign_input_p2pk(self, input_index: int, private_key: str, redeem_script) -> bool:
+        sig_hash = self.sig_hash_legacy(input_index, redeem_script)
+        r, s = curve.sign_data(sig_hash, private_key)
+        der = curve.der(r, s)
+        signature = der + SIGHASH_ALL.to_bytes(1, 'big')
+        script_sig = Script([signature])
+        self.tx_ins[input_index].script_sig = script_sig
+        
+        return True
+    
+
 class TxIn:
 
     def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, sequence: int=0xffffffff) -> "TxIn":

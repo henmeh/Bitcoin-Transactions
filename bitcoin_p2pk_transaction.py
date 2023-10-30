@@ -71,13 +71,10 @@ def main():
     # step 3: sign the sig hash with your private key
     # the scriptSig must be the scriptPubKey from the transaction to spent from
     script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
-    raw_transaction.sign_input(0, private_key_int, script_sig)
+    raw_transaction.sign_input_p2pk(0, private_key_int_receiver, script_sig)
 
     print("This is your signed raw p2pkh transaction to spent the p2pk utxo")
-    print(raw_transaction.serialize().hex())
-    
-
-    
+    print(raw_transaction.serialize().hex()) 
 
 
 if __name__ == "__main__":

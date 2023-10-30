@@ -57,10 +57,33 @@ def test_for_p2sh_transaction():
     print(raw_transaction.serialize().hex() == "0100000001232cf31cf1a4207abc80f5bf6ba675a41b0bb41c732ceedefca14259f837d299000000002a1374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff01401f00000000000017a91463b256137edbbaaad52286528c4dd75a393427bc87ffffffff")
 
 
+def test_for_p2pk_transaction():
+    version = 1
+    tx_id_to_spent = 'f60044de9eadb365c03d47907c200705194b2d9bbdf307d398f234143de3f291'
+    tx_index_to_spent = 0
+    script_pub_key_to_spent = '210377708dd31f718fab3178084a7cf5a8e6bf1e7c4079af5bf9f8c5a0a69a3dd31eac'
+    amount_to_spent = 8000
+    receiver_address = "mqFPkGEwujzzz6bPTdco86t3bhpPgDSvSm"
+    locktime = 0xffffffff
+    private_key_wif_receiver = 'cS1U7iREGpYmDuW7hRWGEyhirJudGptEwEDUmBKaPjeu9aRRSnxH'
+    private_key_int_receiver = converter.convert_private_key_wif_to_int(private_key_wif_receiver)
+
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent)
+
+    script_pubkey_receiver = p2pkh_script(converter.decode_base58(receiver_address))
+    transaction_output = TxOut(amount_to_spent, script_pubkey_receiver)
+    raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
+
+    script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
+    raw_transaction.sign_input_p2pk(0, private_key_int_receiver, script_sig)
+
+    print(raw_transaction.serialize().hex() == "010000000191f2e33d1434f298d307f3bd9b2d4b190507207c90473dc065b3ad9ede4400f60000000048473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb0220025c8bd849c4bd110f0a022d4a668d578c5de2b6660b9598f94d62cef8ec66f301ffffffff01401f0000000000001976a9146abfd93ee84140a3c6db55bc5903561c995b392888acffffffff") 
+
 
 def main():
     test_for_p2pkh_transaction()
     test_for_p2sh_transaction()
+    test_for_p2pk_transaction()
 
 
 if __name__ == "__main__":

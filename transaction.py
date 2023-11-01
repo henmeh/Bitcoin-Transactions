@@ -181,7 +181,7 @@ class Tx:
         else:
             script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize()
         sig_hash += script_code
-        sig_hash += converter.int_to_little_endian(tx_in.value(), 8)
+        sig_hash += converter.int_to_little_endian(tx_in.value, 8)
         sig_hash += converter.int_to_little_endian(tx_in.sequence, 4)
         sig_hash += self.hash_outputs()
         sig_hash += converter.int_to_little_endian(self.locktime, 4)
@@ -256,7 +256,7 @@ class Tx:
 
 class TxIn:
 
-    def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, sequence: int=0xffffffff, witness_script: Script = [bytes.fromhex("304402201bfbc8801be5a4cf23c6a68b8ed458a8e5d55ab2a2469064e72ae6b6b410bada02201522331d19c6748c5723cf4fa995fcb2d0e063c86e6eafa5cb8c2768aa49326101"), bytes.fromhex("024fdd0bfde4d617fed3c892a980a8673baa913968acf0f2d6bf119ee31d6ce102")]) -> "TxIn":
+    def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, value: int = 0, sequence: int=0xffffffff, witness_script: Script = [bytes.fromhex("304402201bfbc8801be5a4cf23c6a68b8ed458a8e5d55ab2a2469064e72ae6b6b410bada02201522331d19c6748c5723cf4fa995fcb2d0e063c86e6eafa5cb8c2768aa49326101"), bytes.fromhex("024fdd0bfde4d617fed3c892a980a8673baa913968acf0f2d6bf119ee31d6ce102")]) -> "TxIn":
         self.prev_tx_id = prev_tx_id
         self.prev_index = prev_index
         if script_sig is None:
@@ -265,6 +265,7 @@ class TxIn:
             self.script_sig = script_sig
         self.sequence = sequence
         self.witness = witness_script
+        self.value = value
 
 
     def __repr__(self) -> str:

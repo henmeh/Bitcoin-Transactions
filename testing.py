@@ -82,7 +82,8 @@ def test_for_p2pk_transaction():
 
 def test_for_sig_hash_bip143():
     transaction = Tx.parse(BytesIO(bytes.fromhex("0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000")))
-    #print(transaction)
+    print(transaction.tx_outs[0].amount)
+    print(transaction.tx_outs[1].amount)
     #print(transaction.tx_ins)
     #print(transaction.tx_outs)
     #print(transaction.hash_prevouts().hex() == "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
@@ -93,7 +94,9 @@ def test_for_sig_hash_bip143():
     #hash vom public key des p2wpkh inputs
     script_code = witness_script(hash.hash160(bytes.fromhex('025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357')))
 
-    print(script_code.raw_serialize(is_segwit=True).hex() == "1976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac")
+    #print(script_code.raw_serialize(is_segwit=True).hex() == "1976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac")
+
+    #print(hex(transaction.sig_hash_segwit(1, witness_script=script_code)))
 
 
 def main():

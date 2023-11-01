@@ -1,6 +1,6 @@
 from bitcoin_transaction_helpers import ECDSA, Bitcoin, Hashes
 from transaction import Tx, TxIn, TxOut
-from script import Script, p2pkh_script, p2sh_script
+from script import Script, p2pkh_script, p2sh_script, witness_script
 from format_converter import Converter
 from io import BytesIO
 from unittest import TestCase
@@ -80,10 +80,27 @@ def test_for_p2pk_transaction():
     print(raw_transaction.serialize().hex() == "010000000191f2e33d1434f298d307f3bd9b2d4b190507207c90473dc065b3ad9ede4400f60000000048473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb0220025c8bd849c4bd110f0a022d4a668d578c5de2b6660b9598f94d62cef8ec66f301ffffffff01401f0000000000001976a9146abfd93ee84140a3c6db55bc5903561c995b392888acffffffff") 
 
 
+def test_for_sig_hash_bip143():
+    transaction = Tx.parse(BytesIO(bytes.fromhex("0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000")))
+    #print(transaction)
+    #print(transaction.tx_ins)
+    #print(transaction.tx_outs)
+    #print(transaction.hash_prevouts().hex() == "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
+    #print(transaction.hash_sequence().hex() == "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
+    #print(transaction.hash_outputs().hex() == "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
+    #print(transaction.sig_hash_segwit(1))
+
+    #hash vom public key des p2wpkh inputs
+    script_code = witness_script(hash.hash160(bytes.fromhex('025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357')))
+
+    print(script_code.raw_serialize(is_segwit=True).hex() == "1976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac")
+
+
 def main():
-    test_for_p2pkh_transaction()
-    test_for_p2sh_transaction()
-    test_for_p2pk_transaction()
+    #test_for_p2pkh_transaction()
+    #test_for_p2sh_transaction()
+    #test_for_p2pk_transaction()
+    test_for_sig_hash_bip143()
 
 
 if __name__ == "__main__":

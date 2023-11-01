@@ -22,6 +22,10 @@ def p2wpkh_script(h160: bytes) -> "Script":
     return Script([0x00, h160])
 
 
+def witness_script(h160: bytes) -> "Script":
+    return Script([0x19, 0x76, 0xa9, 0x14, h160, 0x88, 0xac])
+
+
 class Script:
 
     def __init__(self, commands=None):

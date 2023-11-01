@@ -114,7 +114,7 @@ class Tx:
             result += tx_in.serialize()
         result += encode_varint(len(self.tx_outs))
         for tx_out in self.tx_outs:
-            result += tx_out.serialize()
+            result += tx_out.serialize(is_segwit=self.is_segwit)
         result += converter.int_to_little_endian(self.locktime, 4)
         return result
     
@@ -127,7 +127,7 @@ class Tx:
             result += tx_in.serialize()
         result += encode_varint(len(self.tx_outs))
         for tx_out in self.tx_outs:
-            result += tx_out.serialize(is_segwit=True)
+            result += tx_out.serialize(is_segwit=self.is_segwit)
         for tx_in in self.tx_ins:
             result += converter.int_to_little_endian(len(tx_in.witness), 1)
             for item in tx_in.witness:
@@ -169,11 +169,11 @@ class Tx:
         return int.from_bytes(hash256, 'big')
     
 
-    def sig_hash_segwit(self, input_index: int, redeem_script: str=None, witness_script: str=None) -> int:
+    def sig_hash_segwit(self, input_index: int, redeem_script: Script=None, witness_script: Script=None) -> int:
         tx_in = self.tx_ins[input_index]
         sig_hash = converter.int_to_little_endian(self.version, 4)
         sig_hash += self.hash_prevouts() + self.hash_sequence()
-        sig_hash += tx_in.prev_tx[::-1] + converter.int_to_little_endian(tx_in.prev_index, 4)
+        sig_hash += tx_in.prev_tx_id[::-1] + converter.int_to_little_endian(tx_in.prev_index, 4)
         if witness_script:
             script_code = witness_script.serialize()
         elif redeem_script:
@@ -190,14 +190,26 @@ class Tx:
         return int.from_bytes(hash.hash256(sig_hash), 'big')
 
 
-    def hash_sequence(self) -> str:
+    def hash_prevouts(self) -> bytes:
+        if self._hash_prevouts is None:
+            all_prevouts = b''
+            all_sequence = b''
+            for tx_in in self.tx_ins:
+                all_prevouts += tx_in.prev_tx_id[::-1] + converter.int_to_little_endian(tx_in.prev_index, 4)
+                all_sequence += converter.int_to_little_endian(tx_in.sequence, 4)
+            self._hash_prevouts = hash.hash256(all_prevouts)
+            self._hash_sequence = hash.hash256(all_sequence)
+        return self._hash_prevouts
+
+    
+    def hash_sequence(self) -> bytes:
         if self._hash_sequence is None:
             self.hash_prevouts()
         
         return self._hash_sequence
 
 
-    def hash_outputs(self) -> str:
+    def hash_outputs(self) -> bytes:
         if self._hash_outputs is None:
             all_outputs = b''
             for tx_out in self.tx_outs:
@@ -209,6 +221,18 @@ class Tx:
 
     def sign_input(self, input_index: int, private_key: str, redeem_script) -> bool:
         sig_hash = self.sig_hash_legacy(input_index, redeem_script)
+        r, s = curve.sign_data(sig_hash, private_key)
+        der = curve.der(r, s)
+        signature = der + SIGHASH_ALL.to_bytes(1, 'big')
+        sec = curve.calculate_public_key(private_key)
+        script_sig = Script([signature, sec])
+        self.tx_ins[input_index].script_sig = script_sig
+        
+        return True
+    
+
+    def sign_input_segwit(self, input_index: int, private_key: str, redeem_script) -> bool:
+        sig_hash = self.sig_hash_segwit(input_index, redeem_script)
         r, s = curve.sign_data(sig_hash, private_key)
         der = curve.der(r, s)
         signature = der + SIGHASH_ALL.to_bytes(1, 'big')
@@ -289,6 +313,6 @@ class TxOut:
 
     def serialize(self, is_segwit=False) -> bytes:
         tx_out = converter.int_to_little_endian(self.amount, 8)
-        tx_out += self.script_pubkey.serialize(is_segwit=is_segwit)
+        tx_out += self.script_pubkey.serialize(is_segwit)
         
         return tx_out

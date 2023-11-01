@@ -70,9 +70,10 @@ class Bitcoin:
         return bech32_address
 
 
-    def bech32_address_to_script_pubkey(self, hrp: str, address: str):
+    def bech32_address_to_script_pubkey(self, hrp: str, address: str) -> bytes:
 
         witver, witprog = bech32ref.decode(hrp, address)
-        script_pubkey = bytes([witver + 0x50 if witver else 0, len(witprog)] + witprog)
+        #script_pubkey = bytes([witver + 0x50 if witver else 0, len(witprog)] + witprog)
 
-        return script_pubkey.hex()
+        script_pubkey = bytes([len(witprog)] + witprog)
+        return script_pubkey

@@ -18,6 +18,10 @@ def p2sh_script(hash160: bytes) -> "Script":
     return Script([0xa9, hash160, 0x87])
 
 
+def p2wpkh_script(h160: bytes) -> "Script":
+    return Script([0x00, h160])
+
+
 class Script:
 
     def __init__(self, commands=None):
@@ -71,7 +75,7 @@ class Script:
         return cls(commands)
     
 
-    def serialize(self) -> str:
+    def raw_serialize(self, is_segwit) -> bytes:
         script = b''
         for command in self.commands:
             if type(command) == int:
@@ -79,7 +83,8 @@ class Script:
             else:
                 length = len(command)
                 if length < 75:
-                    script += converter.int_to_little_endian(length, 1)
+                    if not is_segwit:
+                        script += converter.int_to_little_endian(length, 1)
                 elif length > 75 and length < 0x100:
                     script += converter.int_to_little_endian(76, 1)
                     script += converter.int_to_little_endian(length, 1)
@@ -90,6 +95,13 @@ class Script:
                     raise ValueError('too long an command')
                 script += command
 
-        total = len(script)
-
-        return encode_varint(total) + script
+        return script
+    
+    def serialize(self, is_segwit=False) -> bytes:
+        # get the raw serialization (no prepended length)
+        result = self.raw_serialize(is_segwit)
+        # get the length of the whole thing
+        total = len(result)
+        # encode_varint the total length of the result and prepend
+        return encode_varint(total) + result
+        

@@ -127,8 +127,8 @@ class Tx:
             result += tx_in.serialize()
         result += encode_varint(len(self.tx_outs))
         for tx_out in self.tx_outs:
-            result += tx_out.serialize()
-        for tx_in in self.tx_ins:  # <3>
+            result += tx_out.serialize(is_segwit=True)
+        for tx_in in self.tx_ins:
             result += converter.int_to_little_endian(len(tx_in.witness), 1)
             for item in tx_in.witness:
                 if type(item) == int:
@@ -232,7 +232,7 @@ class Tx:
 
 class TxIn:
 
-    def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, sequence: int=0xffffffff) -> "TxIn":
+    def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, sequence: int=0xffffffff, witness_script: Script = [bytes.fromhex("304402201bfbc8801be5a4cf23c6a68b8ed458a8e5d55ab2a2469064e72ae6b6b410bada02201522331d19c6748c5723cf4fa995fcb2d0e063c86e6eafa5cb8c2768aa49326101"), bytes.fromhex("024fdd0bfde4d617fed3c892a980a8673baa913968acf0f2d6bf119ee31d6ce102")]) -> "TxIn":
         self.prev_tx_id = prev_tx_id
         self.prev_index = prev_index
         if script_sig is None:
@@ -240,6 +240,7 @@ class TxIn:
         else:
             self.script_sig = script_sig
         self.sequence = sequence
+        self.witness = witness_script
 
 
     def __repr__(self) -> str:
@@ -286,8 +287,8 @@ class TxOut:
         return cls(amount, script_pubkey)
     
 
-    def serialize(self) -> bytes:
+    def serialize(self, is_segwit=False) -> bytes:
         tx_out = converter.int_to_little_endian(self.amount, 8)
-        tx_out += self.script_pubkey.serialize()
+        tx_out += self.script_pubkey.serialize(is_segwit=is_segwit)
         
         return tx_out

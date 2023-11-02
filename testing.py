@@ -82,27 +82,20 @@ def test_for_p2pk_transaction():
 
 def test_for_sig_hash_bip143():
     transaction = Tx.parse(BytesIO(bytes.fromhex("0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000")))
-    print(transaction.tx_outs[0].amount)
-    print(transaction.tx_outs[1].amount)
-    #print(transaction.tx_ins)
-    #print(transaction.tx_outs)
-    #print(transaction.hash_prevouts().hex() == "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
-    #print(transaction.hash_sequence().hex() == "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
-    #print(transaction.hash_outputs().hex() == "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
-    #print(transaction.sig_hash_segwit(1))
-
+    amount_to_send = 600000000
+  
     #hash vom public key des p2wpkh inputs
     script_code = witness_script(hash.hash160(bytes.fromhex('025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357')))
 
-    #print(script_code.raw_serialize(is_segwit=True).hex() == "1976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac")
+    transaction.sign_input_segwit(1, int("619c335025c7f4012e556c2a58b2506e30b8511b53ade95ea316fd8c3286feb9", 16), script_code, amount_to_send)
 
-    #print(hex(transaction.sig_hash_segwit(1, witness_script=script_code)))
+    print(transaction.serialize_segwit().hex() == "01000000000102fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac02473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02201d2c9359745c1fa50d65edeeb0d2132d3636ad9beffe485df0d2bf3e904650e80121025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee635711000000")
 
 
 def main():
-    #test_for_p2pkh_transaction()
-    #test_for_p2sh_transaction()
-    #test_for_p2pk_transaction()
+    test_for_p2pkh_transaction()
+    test_for_p2sh_transaction()
+    test_for_p2pk_transaction()
     test_for_sig_hash_bip143()
 
 

@@ -129,12 +129,13 @@ class Tx:
         for tx_out in self.tx_outs:
             result += tx_out.serialize(is_segwit=self.is_segwit)
         for tx_in in self.tx_ins:
-            result += converter.int_to_little_endian(len(tx_in.witness), 1)
-            for item in tx_in.witness:
-                if type(item) == int:
-                    result += converter.int_to_little_endian(item, 1)
-                else:
-                    result += encode_varint(len(item)) + item
+            if tx_in.witness != None:
+                result += converter.int_to_little_endian(len(tx_in.witness.commands), 1)
+                for item in tx_in.witness.commands:
+                    if type(item) == int:
+                        result += converter.int_to_little_endian(item, 1)
+                    else:
+                        result += encode_varint(len(item)) + item
         result += converter.int_to_little_endian(self.locktime, 4)
         return result
 
@@ -169,19 +170,37 @@ class Tx:
         return int.from_bytes(hash256, 'big')
     
 
-    def sig_hash_segwit(self, input_index: int, redeem_script: Script=None, witness_script: Script=None) -> int:
+    def sig_hash_segwit(self, input_index: int, redeem_script: Script=None, witness_script: Script=None, amount: int = 0) -> int:
+        #tx_in = self.tx_ins[input_index]
+        #print(f"{converter.int_to_little_endian(self.version, 4).hex()}" == "01000000")
+        #print(f"{self.hash_prevouts().hex()}" == "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
+        #print(f"{self.hash_sequence().hex()}" == "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
+        #print(f"{tx_in.prev_tx_id[::-1].hex() + converter.int_to_little_endian(tx_in.prev_index, 4).hex()}" == "ef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a01000000") 
+        #if witness_script:
+        #    script_code = witness_script.raw_serialize(is_segwit=True).hex()
+        #elif redeem_script:
+        #    script_code = p2pkh_script(redeem_script.cmds[1]).serialize().hex()
+        #else:
+        #    script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize().hex()
+        #print(f"{script_code}" == "1976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac")
+        #print(f"{converter.int_to_little_endian(amount, 8).hex()}" == "0046c32300000000")
+        #print(f"{converter.int_to_little_endian(tx_in.sequence, 4).hex()}" == "ffffffff")
+        #print(f"{self.hash_outputs().hex()}" == "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
+        #print(f"{converter.int_to_little_endian(self.locktime, 4).hex()}" == "11000000")
+        #print(f"{converter.int_to_little_endian(SIGHASH_ALL, 4).hex()}" == "01000000")        
+        
         tx_in = self.tx_ins[input_index]
         sig_hash = converter.int_to_little_endian(self.version, 4)
         sig_hash += self.hash_prevouts() + self.hash_sequence()
         sig_hash += tx_in.prev_tx_id[::-1] + converter.int_to_little_endian(tx_in.prev_index, 4)
         if witness_script:
-            script_code = witness_script.serialize()
+            script_code = witness_script.raw_serialize(is_segwit=True)
         elif redeem_script:
             script_code = p2pkh_script(redeem_script.cmds[1]).serialize()
         else:
             script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize()
         sig_hash += script_code
-        sig_hash += converter.int_to_little_endian(tx_in.value, 8)
+        sig_hash += converter.int_to_little_endian(amount, 8)
         sig_hash += converter.int_to_little_endian(tx_in.sequence, 4)
         sig_hash += self.hash_outputs()
         sig_hash += converter.int_to_little_endian(self.locktime, 4)
@@ -231,14 +250,14 @@ class Tx:
         return True
     
 
-    def sign_input_segwit(self, input_index: int, private_key: str, redeem_script) -> bool:
-        sig_hash = self.sig_hash_segwit(input_index, redeem_script)
+    def sign_input_segwit(self, input_index: int, private_key: str, redeem_script, amount) -> bool:
+        sig_hash = self.sig_hash_segwit(input_index, witness_script=redeem_script, amount=amount)
         r, s = curve.sign_data(sig_hash, private_key)
         der = curve.der(r, s)
         signature = der + SIGHASH_ALL.to_bytes(1, 'big')
         sec = curve.calculate_public_key(private_key)
         script_sig = Script([signature, sec])
-        self.tx_ins[input_index].script_sig = script_sig
+        self.tx_ins[input_index].witness = script_sig
         
         return True
     
@@ -256,7 +275,7 @@ class Tx:
 
 class TxIn:
 
-    def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, value: int = 0, sequence: int=0xffffffff, witness_script: Script = [bytes.fromhex("304402201bfbc8801be5a4cf23c6a68b8ed458a8e5d55ab2a2469064e72ae6b6b410bada02201522331d19c6748c5723cf4fa995fcb2d0e063c86e6eafa5cb8c2768aa49326101"), bytes.fromhex("024fdd0bfde4d617fed3c892a980a8673baa913968acf0f2d6bf119ee31d6ce102")]) -> "TxIn":
+    def __init__(self, prev_tx_id: bytes, prev_index: int, script_sig: Script=None, sequence: int=0xffffffff, witness_script: Script = None) -> "TxIn":
         self.prev_tx_id = prev_tx_id
         self.prev_index = prev_index
         if script_sig is None:
@@ -265,7 +284,6 @@ class TxIn:
             self.script_sig = script_sig
         self.sequence = sequence
         self.witness = witness_script
-        self.value = value
 
 
     def __repr__(self) -> str:

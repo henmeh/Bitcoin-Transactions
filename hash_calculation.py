@@ -33,7 +33,6 @@ class Hashes:
         return hashlib.sha256(hashlib.sha256(data).digest()).digest()
 
 
-    def sha256(self, data):
+    def sha256(self, data: bytes) -> bytes:
 
-        data_in_bytes = bytes.fromhex(data)
-        return hashlib.sha256(data_in_bytes).hexdigest()
+        return hashlib.sha256(data).digest()

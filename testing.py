@@ -1,6 +1,6 @@
 from bitcoin_transaction_helpers import ECDSA, Bitcoin, Hashes
 from transaction import Tx, TxIn, TxOut
-from script import Script, p2pkh_script, p2sh_script, witness_script
+from script import Script, p2pkh_script, p2sh_script, witness_script, p2wsh_script
 from format_converter import Converter
 from io import BytesIO
 from unittest import TestCase
@@ -82,6 +82,7 @@ def test_for_p2pk_transaction():
 
 def test_for_sig_hash_bip143():
     transaction = Tx.parse(BytesIO(bytes.fromhex("0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000")))
+    #input amount for the segwit p2wpkh input
     amount_to_send = 600000000
   
     #hash vom public key des p2wpkh inputs
@@ -92,12 +93,56 @@ def test_for_sig_hash_bip143():
     print(transaction.serialize_segwit().hex() == "01000000000102fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac02473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02201d2c9359745c1fa50d65edeeb0d2132d3636ad9beffe485df0d2bf3e904650e80121025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee635711000000")
 
 
+def test_for_p2wsh_transaction():
+    version = 1
+    tx_id_to_spent = '838344326dcd6bb239368ddbbcf9f534eb8c65af5e95b538fdca19cf704a7476'
+    tx_index_to_spent = 0
+    amount_to_spent = 8000
+    locktime = 0xffffffff
+
+    secret = "this is base58 yall"
+    secret_hex = converter.convert_string_to_hex(secret)
+    original_script = Script([bytes.fromhex(secret_hex), 0x87])
+    original_script_hex = original_script.serialize().hex()[2:]  
+    original_script_sha256 = hash.sha256(bytes.fromhex(original_script_hex))
+   
+    p2wsh = p2wsh_script(original_script_sha256)
+   
+    witness = Script([bytes.fromhex(secret_hex), bytes.fromhex(original_script_hex)])
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent, witness_script=witness)
+
+    transaction_output = TxOut(amount_to_spent, p2wsh)
+    raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
+
+    print(raw_transaction.serialize_segwit().hex() == "0100000000010176744a70cf19cafd38b5955eaf658ceb34f5f9bcdb8d3639b26bcd6d324483830000000000ffffffff01401f00000000000022002012bd027208ce2c995ec6d15425934ce52a6087248da62ff0c3d811f994d080d5021374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff")
+
+
+
 def main():
     test_for_p2pkh_transaction()
     test_for_p2sh_transaction()
     test_for_p2pk_transaction()
-    test_for_sig_hash_bip143()
+    #test_for_sig_hash_bip143()
+    test_for_p2wsh_transaction()
 
 
 if __name__ == "__main__":
     main()
+
+
+#01000000
+#02
+#fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f
+#00000000
+#00
+#eeffffff
+#ef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a
+#01000000
+#00
+#ffffffff
+#02
+#202cb20600000000
+#1976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac
+#9093510d00000000
+#1976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac
+#11000000

@@ -171,23 +171,23 @@ class Tx:
     
 
     def sig_hash_segwit(self, input_index: int, redeem_script: Script=None, witness_script: Script=None, amount: int = 0) -> int:
-        #tx_in = self.tx_ins[input_index]
-        #print(f"{converter.int_to_little_endian(self.version, 4).hex()}" == "01000000")
-        #print(f"{self.hash_prevouts().hex()}" == "96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37")
-        #print(f"{self.hash_sequence().hex()}" == "52b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3b")
-        #print(f"{tx_in.prev_tx_id[::-1].hex() + converter.int_to_little_endian(tx_in.prev_index, 4).hex()}" == "ef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a01000000") 
-        #if witness_script:
-        #    script_code = witness_script.raw_serialize(is_segwit=True).hex()
-        #elif redeem_script:
-        #    script_code = p2pkh_script(redeem_script.cmds[1]).serialize().hex()
-        #else:
-        #    script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize().hex()
-        #print(f"{script_code}" == "1976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac")
-        #print(f"{converter.int_to_little_endian(amount, 8).hex()}" == "0046c32300000000")
-        #print(f"{converter.int_to_little_endian(tx_in.sequence, 4).hex()}" == "ffffffff")
-        #print(f"{self.hash_outputs().hex()}" == "863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e5")
-        #print(f"{converter.int_to_little_endian(self.locktime, 4).hex()}" == "11000000")
-        #print(f"{converter.int_to_little_endian(SIGHASH_ALL, 4).hex()}" == "01000000")        
+        tx_in = self.tx_ins[input_index]
+        print(f"{converter.int_to_little_endian(self.version, 4).hex()}")
+        print(f"{self.hash_prevouts().hex()}")
+        print(f"{self.hash_sequence().hex()}")
+        print(f"{tx_in.prev_tx_id[::-1].hex() + converter.int_to_little_endian(tx_in.prev_index, 4).hex()}") 
+        if witness_script:
+            script_code = witness_script.raw_serialize(is_segwit=True).hex()
+        elif redeem_script:
+            script_code = p2pkh_script(redeem_script.cmds[1]).serialize().hex()
+        else:
+            script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize().hex()
+        print(f"{script_code}")
+        print(f"{converter.int_to_little_endian(amount, 8).hex()}")
+        print(f"{converter.int_to_little_endian(tx_in.sequence, 4).hex()}")
+        print(f"{self.hash_outputs().hex()}")
+        print(f"{converter.int_to_little_endian(self.locktime, 4).hex()}")
+        print(f"{converter.int_to_little_endian(SIGHASH_ALL, 4).hex()}")        
         
         tx_in = self.tx_ins[input_index]
         sig_hash = converter.int_to_little_endian(self.version, 4)

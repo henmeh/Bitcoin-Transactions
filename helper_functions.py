@@ -2,6 +2,8 @@ from format_converter import Converter
 
 converter = Converter()
 
+SIGHASH_ALL = 1
+
 def read_varint(stream: bytearray) -> int:
     i = stream.read(1)[0]
     if i == 0xfd:

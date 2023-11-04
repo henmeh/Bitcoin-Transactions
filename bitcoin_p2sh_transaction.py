@@ -1,50 +1,66 @@
-from bitcoin_transaction_helpers import ECDSA, Hashes, Bitcoin
+from bitcoin_transaction_helpers import ECDSA, Hashes
+from format_converter import Converter
+from script import Script, p2sh_script
+from transaction import TxIn, TxOut, Tx
+from io import BytesIO
 
-# the elliptical curve bitcoin is using
-curve = ECDSA("secp256k1")
-bitcoin = Bitcoin()
+curve = ECDSA('secp256k1')
 hash = Hashes()
-
+converter = Converter()
 
 def main():
 
-    private_key_wif: str = "cS4EmX16hg3otvekPZX4X9kYcPtT6QMiJpg8fRuWQo6kL52ykXXN"
-    tx_to_spent_from_hex: str = "80c4adf5f956200bca1cdb019b7a84b58df1291354cfe15ff898c27a75739088"
-    script_pubkey_from_tx_to_spent_from_hex: str = "76a914ab54a298577127ae7d64e2671d5f9fbea8675e8888ac"
-    vout: str = "1"
-    amount_to_spent_satoshi: int = 9000
-    secret = "we make it visible"
-    sighash_flag_hex = "01"
+    private_key_wif = 'cV6EkdS8sGkZ8Y68ZnpRDhaG33992y8jn5mwhvKs1x1DyjkjNRYr'
+    private_key_int = converter.convert_private_key_wif_to_int(private_key_wif)
+    version = 1
+    tx_id_to_spent = 'bef5dc9b6a59dae3d2998af4c6d934b24fe6e45ac318b7523cdcdcd233728973'
+    tx_index_to_spent = 1
+    script_pub_key_to_spent = '76a914ad49ea957570d4c831ed6ea47a7092eb8a736aa488ac'
+    amount_to_spent = 9000
+    locktime = 0xffffffff
 
-    _, p2sh_script, _ = bitcoin.calculate_p2sh_scriptPubKey(secret)
-    unsigned_transaction_dict, unsigned_raw_transaction = bitcoin.create_raw_transaction(tx_to_spent_from_hex, vout, script_pubkey_from_tx_to_spent_from_hex, amount_to_spent_satoshi, p2sh_script)
+    # now we build the script we want to sent the funds   
+    secret = "this is base58 yall"
+    secret_hex = converter.convert_string_to_hex(secret)
+    original_script = Script([bytes.fromhex(secret_hex), 0x87])
+    original_script_hex = original_script.serialize().hex()[2:] #serialize will give back also the length of the total script, but this is not part of the hashing data  
+    original_script_hash160 = hash.hash160(bytes.fromhex(original_script_hex))
+    
+    # create a raw transaction
+    # step 1: create the transaction input
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent)
 
-    print(unsigned_raw_transaction)
+    # step 2: create the transaction output 
+    ps2h = p2sh_script(original_script_hash160)
+    transaction_output = TxOut(amount_to_spent, ps2h)
+    raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
 
+    # step 3: sign the sig hash with your private key
+    # the scriptSig must be the scriptPubKey from the transaction to spent from
+    script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
+    raw_transaction.sign_input(0, private_key_int, script_sig)
 
-    script_sig_hex = bitcoin.calculate_p2pkh_scriptSig(unsigned_raw_transaction, private_key_wif, sighash_flag_hex)
-    signed_raw_transaction_dict, signed_raw_transaction = bitcoin.create_raw_transaction(tx_to_spent_from_hex, vout, script_sig_hex, amount_to_spent_satoshi, p2sh_script)
-    print("---------------------------------------")
-    print(signed_raw_transaction)
-
-
+    print("This is your signed raw p2sh transaction to lock funds to a p2sh")
+    print(raw_transaction.serialize().hex())
+    
     # after sending the signed raw transaction we have funds locked to our secret
-    # notice that we did not use an anddress to send funds!!!
+    version = 1
+    tx_id_to_spent = '99d237f85942a1fcdeee2c731cb40b1ba475a66bbff580bc7a20a4f11cf32c23'
+    tx_index_to_spent = 0
+    amount_to_spent = 8000
+    locktime = 0xffffffff
+    
+    # create a raw transaction
+    # step 1: create the transaction input
+    script_sig = Script([bytes.fromhex(secret_hex), bytes.fromhex(original_script_hex)])
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent, script_sig=script_sig)
 
-    # calculating the scriptSig for spending the funds locked to our secret
-    tx_for_locking_the_funds_to_secret = "45b770d1e72af01bcb58eba44c98a8b97097201df3f884f9c24cfda14d7ea0d2"
-    vout: str = "0"
-    amount_to_spent_satoshi: int = 8000
+    # step 2: create the transaction output 
+    transaction_output = TxOut(amount_to_spent, ps2h)
+    raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
 
-    script_sig_hex = bitcoin.calculate_p2sh_scriptSig(secret)
-
-    # WATCH OUT!!! WE SPEND THE FUNDS TO THE SAME SECRET AGAIN. NEVER DO THIS IN REAL LIFE. OUR TX IS ONLY ON TESTNET SO YOLO!!!
-    signed_raw_transaction_dict, signed_raw_transaction = bitcoin.create_raw_transaction(tx_for_locking_the_funds_to_secret, vout, script_sig_hex, amount_to_spent_satoshi, p2sh_script)
-    print("---------------------------------------")
-    print(signed_raw_transaction)
-
-    # now we can send this raw transaction
-    # note that we did not use the step sign tx because we already knew the scriptSig
+    print("This is your signed raw p2sh transaction to spend a p2sh utxo")
+    print(raw_transaction.serialize().hex())
 
 
 if __name__ == "__main__":

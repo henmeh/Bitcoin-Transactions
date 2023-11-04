@@ -60,23 +60,35 @@ class ECDSA:
         return (key_public[0], key_public[1])
 
 
-    def sign_data(self, hash_of_data_to_sign, key_priv_int,):
+    def sign_data(self, hash_of_data_to_sign: str, key_private: int) -> int:
 
         random_number = 123456789
-        #random_number = random.randint(1, self.max_points_int)
 
         x_random_signing_point, _ = self.ec_multiply(random_number)
         r = x_random_signing_point
-        s = ((int(hash_of_data_to_sign,16) + r * key_priv_int) * (self.gcdExtended(self.max_points_int, random_number)[2])) % self.max_points_int
+        s = (hash_of_data_to_sign + r * key_private) * (self.gcdExtended(self.max_points_int, random_number)[2]) % self.max_points_int
 
         #use the low s value (BIP 62: Dealing with malleability)
         if (s > self.max_points_int / 2):
             s = self.max_points_int - s
+        
+        return r, s
+    
+    def der(self, r: int, s: int) -> bytes:
+        
+        rbin = r.to_bytes(32, 'big')
+        rbin = rbin.lstrip(b'\x00')
+        if rbin[0] & 0x80:
+            rbin = b'\x00' + rbin
+        result = bytes([2, len(rbin)]) + rbin
 
-        r_hex: str = r.to_bytes(32, "big").hex()
-        s_hex: str = s.to_bytes(32, "big").hex()
-
-        return (r_hex, s_hex)
+        sbin = s.to_bytes(32, 'big')
+        sbin = sbin.lstrip(b'\x00')
+        if sbin[0] & 0x80:
+            sbin = b'\x00' + sbin
+        result += bytes([2, len(sbin)]) + sbin
+        
+        return bytes([0x30, len(result)]) + result
     
 
     def verify_signature(self, hash_of_data_to_sign, s, public_key, r):
@@ -89,3 +101,17 @@ class ECDSA:
         x, y = self.ec_addition((xu1, yu1), (xu2, yu2))
 
         return x == r % self.max_points_int
+    
+
+    def calculate_public_key(self, private_key: int, compressed: bool=True) -> bytes:
+
+        public_key_x, public_key_y = self.ec_multiply(private_key)
+
+        if compressed:
+            if public_key_y % 2 == 0:
+                return b'\x02' + public_key_x.to_bytes(32, 'big')
+            else:
+                return b'\x03' + public_key_x.to_bytes(32, 'big')
+        else:
+            # if non-compressed, starts with b'\x04' followod by self.x and then self.y
+            return b'\x04' + public_key_x.to_bytes(32, 'big') + public_key_y.to_bytes(32, 'big')

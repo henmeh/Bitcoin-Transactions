@@ -1,11 +1,13 @@
 from hash_calculation import Hashes
+import base58
+
 
 
 class Converter:
 
     def __init__(self):
         self.BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-        self.hash256 = Hashes()
+        self.hash = Hashes()
 
 
     def convert_string_to_hex(self, string: str) -> str:
@@ -63,6 +65,15 @@ class Converter:
             num += self.BASE58_ALPHABET.index(c)
         combined = num.to_bytes(25, byteorder='big')
         checksum = combined[-4:]
-        if self.hash256(combined[:-4])[:4] != checksum:
-            raise ValueError('bad address: {} {}'.format(checksum, self.hash256.hash256(combined[:-4])[:4]))
+        if self.hash.hash256(combined[:-4])[:4] != checksum:
+            raise ValueError('bad address: {} {}'.format(checksum, self.hash.hash256(combined[:-4])[:4]))
         return combined[1:-4]
+
+
+    def convert_private_key_wif_to_int(self, private_key_wif: str) -> int:
+        
+        private_key_bytes = base58.b58decode_check(private_key_wif)
+        private_key_hex = private_key_bytes.hex()[2:-2]
+        private_key_int = int(private_key_hex, 16)
+
+        return private_key_int

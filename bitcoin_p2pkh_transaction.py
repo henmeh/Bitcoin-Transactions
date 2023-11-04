@@ -1,32 +1,46 @@
 from bitcoin_transaction_helpers import ECDSA, Bitcoin, Hashes
+from transaction import Tx, TxIn, TxOut
+from script import Script, p2pkh_script
+from format_converter import Converter
+from io import BytesIO
+
 
 # the elliptical curve bitcoin is using
 curve = ECDSA("secp256k1")
 bitcoin = Bitcoin()
 hash = Hashes()
+converter = Converter()
+
 
 
 def main():
 
-    private_key_wif: str = "cUJqaouk7yMJjPWNp21BJ6bC6gPjFfjnKbXkkETCJvZ6TiHuwDcA"
-    address_receiver: str = "mg6W3QKu6G5LRkXmKdayLN213sFuhESVgu"
-    tx_to_spent_from_hex: str = "80cf84760f5f75369d2c81c65793ff8100988027e3d08dd37bdb252fa4e470c4"
-    scriptPubKey_from_tx_to_spent_from_hex: str = "76a914cb0b589d96c4e88684e39a990712ecdbe3cd727188ac"
-    vout: str = "1"
-    amount_satoshi: int = 9000
-    sighash_flag_hex = "01"
+    private_key_wif = "cTwMnFm86YFcQRqzNUfV1ygpKPU78NUqW8m4t3oqWmeEs1gcfDo1"
+    private_key_int = converter.convert_private_key_wif_to_int(private_key_wif)
+    version = 1
+    tx_id_to_spent = 'ca0bf9d6344c56bac32c0e707eb853d162ee6376b7a5d062754ba205281f69d5'
+    tx_index_to_spent = 1
+    script_pub_key_to_spent = '76a91488fd87526e486c18b2f232df6cb15109a45e9dac88ac'
+    amount_to_spent = 9000
+    receiver_address = "mhqPXXnKfzhNUk8DNjSkYhwe81u3PTPDut"
+    locktime = 0xffffffff
 
+    # create a raw transaction
+    # step 1: create the transaction input
+    transaction_input = TxIn(bytes.fromhex(tx_id_to_spent), tx_index_to_spent)
     
-    script_pub_key_hex = bitcoin.calculate_p2pkh_scriptPubKey(address_receiver)
-    _, unsigned_raw_transaction = bitcoin.create_raw_transaction(tx_to_spent_from_hex, vout, scriptPubKey_from_tx_to_spent_from_hex, amount_satoshi, script_pub_key_hex)
-    print(unsigned_raw_transaction)
-
-    script_sig_hex = bitcoin.calculate_p2pkh_scriptSig(unsigned_raw_transaction, private_key_wif, sighash_flag_hex)
-    _, signed_raw_transaction = bitcoin.create_raw_transaction(tx_to_spent_from_hex, vout, script_sig_hex, amount_satoshi, script_pub_key_hex)
+    # step 2: create the transaction output
+    script_pubkey_receiver = p2pkh_script(converter.decode_base58(receiver_address))
+    transaction_output = TxOut(amount_to_spent, script_pubkey_receiver)
+    raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
     
-    print("-----------------------------------------------")
-    print(signed_raw_transaction)
+    # step 3: sign the sig hash with your private key
+    # the scriptSig must be the scriptPubKey from the transaction to spent from
+    script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
+    raw_transaction.sign_input(0, private_key_int, script_sig)
 
+    print("This is your signed raw p2pkh transaction")
+    print(raw_transaction.serialize().hex())
 
 if __name__ == "__main__":
     main()

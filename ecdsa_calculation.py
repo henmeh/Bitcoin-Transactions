@@ -1,3 +1,5 @@
+G = (55066263022277343669578718895168534326250603453777594175500187360389116729240, 32670510020758816978083085130507043184471273380659243275938904335757337482424)
+
 class ECDSA:
 
     def __init__(self, curve):
@@ -41,18 +43,18 @@ class ECDSA:
         return (x,y)
 
 
-    def ec_multiply(self, private_key: int):
+    def ec_multiply(self, P1, P2 = G) -> tuple:
 
-        if 0 < private_key <= self.max_points_int:
-            key_public = self.generator_point
+        if 0 < P1 <= self.max_points_int:
+            key_public = P2
 
             #to speed up calculations we use the double and add algorithmus
-            key_priv_binary = bin(private_key)[2:]
+            key_priv_binary = bin(P1)[2:]
             
             for i in range(1, len(key_priv_binary)):
                 key_public = self.ec_doubling(key_public)
                 if (key_priv_binary[i]=="1"):
-                    key_public = self.ec_addition(key_public, self.generator_point)
+                    key_public = self.ec_addition(key_public, P2)
 
         else:
             print("This is an invalid private key!")
@@ -91,16 +93,16 @@ class ECDSA:
         return bytes([0x30, len(result)]) + result
     
 
-    def verify_signature(self, hash_of_data_to_sign, s, public_key, r):
+    def verify_signature(self, hash_of_data_to_sign, signature, public_key):
 
-        w = self.gcdExtended(self.max_points_int, s)[2]
+        w = self.gcdExtended(self.max_points_int, signature[1])[2]
         u1 = (w * hash_of_data_to_sign) % self.max_points_int
-        u2 = (w * r) % self.max_points_int
+        u2 = (w * signature[0]) % self.max_points_int
         xu1, yu1 = self.ec_multiply(u1)
-        xu2, yu2 = self.ec_multiply(u2)
+        xu2, yu2 = self.ec_multiply(u2, public_key)
         x, y = self.ec_addition((xu1, yu1), (xu2, yu2))
 
-        return x == r % self.max_points_int
+        return x == signature[0] % self.max_points_int
     
 
     def calculate_public_key(self, private_key: int, compressed: bool=True) -> bytes:

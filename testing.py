@@ -117,14 +117,25 @@ def test_for_p2wsh_transaction():
     print(raw_transaction.serialize_segwit().hex() == "0100000000010176744a70cf19cafd38b5955eaf658ceb34f5f9bcdb8d3639b26bcd6d324483830000000000ffffffff01401f00000000000022002012bd027208ce2c995ec6d15425934ce52a6087248da62ff0c3d811f994d080d5021374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff")
 
 
+def test_ecdsa_signature():
+    key_private = 48631218613254
+    key_public = curve.ec_multiply(key_private)
+    data = "we make it visible"
+    data_hex = converter.convert_string_to_hex(data)
+    hash_of_data = hash.hash256(bytes.fromhex(data_hex))
+
+    ecdsa_signature = curve.sign_data(int(hash_of_data.hex(),16), key_private)
+
+    print(curve.verify_signature(int(hash_of_data.hex(),16), ecdsa_signature, key_public))
+
 
 def main():
-    test_for_p2pkh_transaction()
-    test_for_p2sh_transaction()
-    test_for_p2pk_transaction()
-    #test_for_sig_hash_bip143()
-    test_for_p2wsh_transaction()
-
+    #test_for_p2pkh_transaction()
+    #test_for_p2sh_transaction()
+    #test_for_p2pk_transaction()
+    ##test_for_sig_hash_bip143()
+    #test_for_p2wsh_transaction()
+    test_ecdsa_signature()
 
 if __name__ == "__main__":
     main()

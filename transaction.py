@@ -181,7 +181,8 @@ class Tx:
         elif redeem_script:
             script_code = p2pkh_script(redeem_script.cmds[1]).serialize().hex()
         else:
-            script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize().hex()
+            print("Hallo")
+            #script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize().hex()
         print(f"{script_code}")
         print(f"{converter.int_to_little_endian(amount, 8).hex()}")
         print(f"{converter.int_to_little_endian(tx_in.sequence, 4).hex()}")
@@ -198,7 +199,8 @@ class Tx:
         elif redeem_script:
             script_code = p2pkh_script(redeem_script.cmds[1]).serialize()
         else:
-            script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize()
+            print("Hallo")
+            #script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize()
         sig_hash += script_code
         sig_hash += converter.int_to_little_endian(amount, 8)
         sig_hash += converter.int_to_little_endian(tx_in.sequence, 4)

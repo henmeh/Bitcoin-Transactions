@@ -129,13 +129,27 @@ def test_ecdsa_signature():
     print(curve.verify_signature(int(hash_of_data.hex(),16), ecdsa_signature, key_public))
 
 
+def test_schnorr_signature():
+    key_private = 48631218613254
+    key_public = curve.ec_multiply(key_private)
+    data = "we make it visible"
+    data_hex = converter.convert_string_to_hex(data)
+    hash_of_data = hash.hash256(bytes.fromhex(data_hex))
+
+    schnorr_signature = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private)
+    print(schnorr_signature)
+
+    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), schnorr_signature, key_public))
+
+
 def main():
     #test_for_p2pkh_transaction()
     #test_for_p2sh_transaction()
     #test_for_p2pk_transaction()
     ##test_for_sig_hash_bip143()
     #test_for_p2wsh_transaction()
-    test_ecdsa_signature()
+    #test_ecdsa_signature()
+    test_schnorr_signature()
 
 if __name__ == "__main__":
     main()

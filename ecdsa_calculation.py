@@ -44,7 +44,6 @@ class ECDSA:
 
 
     def ec_multiply(self, P1, P2 = G) -> tuple:
-
         if 0 < P1 <= self.max_points_int:
             key_public = P2
 
@@ -123,6 +122,16 @@ class ECDSA:
         x, y = self.ec_addition(P1, P2)
 
         return (x,y) == signature[0]
+    
+
+    def verify_musig_schnorr(self, hash_of_data_to_sign, added_signature, added_public_key, R1, R2):
+
+        P1 = self.ec_multiply(hash_of_data_to_sign, added_public_key)
+        added_R = self.ec_addition(R1, R2)
+        P2 = self.ec_multiply(added_signature)
+        x, y = self.ec_addition(P1, P2)
+
+        return (x,y) == added_R
     
 
     def calculate_public_key(self, private_key: int, compressed: bool=True) -> bytes:

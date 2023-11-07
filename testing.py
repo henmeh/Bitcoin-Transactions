@@ -141,6 +141,26 @@ def test_schnorr_signature():
     print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), schnorr_signature, key_public))
 
 
+def test_schnorr_musig():
+    key_private_1 = 48631218613254
+    key_public_1 = curve.ec_multiply(key_private_1)
+
+    key_private_2 = 78932116943118
+    key_public_2 = curve.ec_multiply(key_private_2)
+        
+    data = "we make it visible"
+    data_hex = converter.convert_string_to_hex(data)
+    hash_of_data = hash.hash256(bytes.fromhex(data_hex))
+
+    schnorr_signature_1 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_1)
+    schnorr_signature_2 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2)
+
+    added_signature = schnorr_signature_1[1] + schnorr_signature_2[1]
+    added_keys_public = curve.ec_addition(key_public_1, key_public_2)
+    
+    print(curve.verify_musig_schnorr(int(hash_of_data.hex(),16), added_signature, added_keys_public, schnorr_signature_1[0], schnorr_signature_2[0]))
+
+
 def main():
     #test_for_p2pkh_transaction()
     #test_for_p2sh_transaction()
@@ -149,6 +169,7 @@ def main():
     #test_for_p2wsh_transaction()
     #test_ecdsa_signature()
     test_schnorr_signature()
+    test_schnorr_musig()
 
 if __name__ == "__main__":
     main()

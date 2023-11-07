@@ -137,7 +137,6 @@ def test_schnorr_signature():
     hash_of_data = hash.hash256(bytes.fromhex(data_hex))
 
     schnorr_signature = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private)
-    print(schnorr_signature)
 
     print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), schnorr_signature, key_public))
 
@@ -153,21 +152,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-#01000000
-#02
-#fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f
-#00000000
-#00
-#eeffffff
-#ef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a
-#01000000
-#00
-#ffffffff
-#02
-#202cb20600000000
-#1976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac
-#9093510d00000000
-#1976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac
-#11000000

@@ -108,15 +108,12 @@ class ECDSA:
     def sign_data_schnorr(self, hash_of_data_to_sign: str, key_private: int) -> int:
 
         random_number = 123456789
-        x_random_signing_point, _ = self.ec_multiply(random_number)
-        r = x_random_signing_point
+        x_random_signing_point, y_random_signing_point = self.ec_multiply(random_number)
+        
+        R = (x_random_signing_point, y_random_signing_point)
         s = (random_number - hash_of_data_to_sign * key_private) % self.max_points_int
 
-        #use the low s value (BIP 62: Dealing with malleability)
-        if (s > self.max_points_int / 2):
-            s = self.max_points_int - s
-        
-        return r, s
+        return R, s
     
 
     def verify_signature_schnorr(self, hash_of_data_to_sign, signature, public_key):
@@ -125,10 +122,7 @@ class ECDSA:
         P2 = self.ec_multiply(signature[1])
         x, y = self.ec_addition(P1, P2)
 
-        print(x)
-        print(signature[0] % self.max_points_int)
-
-        return x == signature[0] % self.max_points_int
+        return (x,y) == signature[0]
     
 
     def calculate_public_key(self, private_key: int, compressed: bool=True) -> bytes:

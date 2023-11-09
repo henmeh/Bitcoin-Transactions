@@ -130,42 +130,47 @@ def test_ecdsa_signature():
 
 
 def test_schnorr_signature():
+    random_number = 123456789
     key_private = 48631218613254
     key_public = curve.ec_multiply(key_private)
+    R = curve.ec_multiply(random_number)
+
     data = "we make it visible"
     data_hex = converter.convert_string_to_hex(data)
     hash_of_data = hash.hash256(bytes.fromhex(data_hex))
 
-    R, s = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private)
+    s = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private, random_number)
 
     print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (R, s), key_public))
 
 
 def test_schnorr_musig():
+    random_number = 123456789
     key_private_1 = 12345678987654321
     key_public_1 = curve.ec_multiply(key_private_1)
+    R1 = curve.ec_multiply(random_number)
 
     key_private_2 = 98765432123456789
     key_public_2 = curve.ec_multiply(key_private_2)
+    R2 = curve.ec_multiply(random_number)
 
     added_keys_public = curve.ec_addition(key_public_1, key_public_2)
+    added_r_values = curve.ec_addition(R1, R2)
 
     data = "Hello"
     data_hex = converter.convert_string_to_hex(data)
-    hash_of_data = hash.sha256(bytes.fromhex(data_hex))
+    hash_of_data = hash.sha256(bytes.fromhex(data_hex) + bytes.fromhex(hex(added_keys_public[0])[2:]) + bytes.fromhex(hex(added_r_values[0])[2:]))
 
-    R1, s1 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_1)
-    R2, s2 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2)
+    s1 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_1, random_number)
+    s2 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2, random_number)
 
     max_points = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"
     max_points_int = int(max_points, 16)
 
     added_s_values = (s1 + s2) % max_points_int
     
-    added_r_values = curve.ec_addition(R1, R2)
 
     print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), added_keys_public))
-
 
 def main():
     test_for_p2pkh_transaction()

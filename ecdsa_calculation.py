@@ -107,16 +107,16 @@ class ECDSA:
         return x == signature[0] % self.max_points_int
     
 
-    def sign_data_schnorr(self, hash_of_data_to_sign: str, key_private: int) -> int:
+    def sign_data_schnorr(self, hash_of_data_to_sign: str, key_private: int, random_number: int) -> int:
 
-        random_number = 123456789
-        x_random_signing_point, y_random_signing_point = self.ec_multiply(random_number)
+        #random_number = 123456789
+        #x_random_signing_point, y_random_signing_point = self.ec_multiply(random_number)
         
-        R = (x_random_signing_point, y_random_signing_point)
+        #R = (x_random_signing_point, y_random_signing_point)
          
         s = (random_number + hash_of_data_to_sign * key_private) % self.max_points_int
 
-        return R, s
+        return s
     
 
     def verify_signature_schnorr(self, hash_of_data_to_sign, signature, public_key):

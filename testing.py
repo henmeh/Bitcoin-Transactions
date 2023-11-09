@@ -136,55 +136,45 @@ def test_schnorr_signature():
     data_hex = converter.convert_string_to_hex(data)
     hash_of_data = hash.hash256(bytes.fromhex(data_hex))
 
-    schnorr_signature = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private)
+    R, s = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private)
 
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), schnorr_signature, key_public))
+    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (R, s), key_public))
 
 
 def test_schnorr_musig():
-    key_private_1 = 48631218613254
+    key_private_1 = 12345678987654321
     key_public_1 = curve.ec_multiply(key_private_1)
 
-    key_private_2 = 78932116943118
+    key_private_2 = 98765432123456789
     key_public_2 = curve.ec_multiply(key_private_2)
-        
-    data = "we make it visible"
+
+    added_keys_public = curve.ec_addition(key_public_1, key_public_2)
+
+    data = "Hello"
     data_hex = converter.convert_string_to_hex(data)
-    hash_of_data = hash.hash256(bytes.fromhex(data_hex))
+    hash_of_data = hash.sha256(bytes.fromhex(data_hex))
 
-    schnorr_signature_1 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_1)
-    schnorr_signature_2 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2)
-
-    #print(f"Schnorr sig1: {schnorr_signature_1}")
-    #print(f"Schnorr sig1: {schnorr_signature_2}")
-    
-    # verify both signatures separately
-    #print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), schnorr_signature_1, key_public_1))
-    #print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), schnorr_signature_2, key_public_2))
+    R1, s1 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_1)
+    R2, s2 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2)
 
     max_points = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"
     max_points_int = int(max_points, 16)
-    p = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 -1
-    
-    added_s_values = (schnorr_signature_1[1] + schnorr_signature_2[1]) % p
-    #print(f"Added s values: {added_s_values}")
 
-    added_r_values = curve.ec_addition(schnorr_signature_1[0] , schnorr_signature_2[0])
-    print(added_r_values)
-
-    added_keys_public = curve.ec_addition(key_public_1, key_public_2)
+    added_s_values = (s1 + s2) % max_points_int
     
+    added_r_values = curve.ec_addition(R1, R2)
+
     print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), added_keys_public))
 
 
 def main():
-    #test_for_p2pkh_transaction()
-    #test_for_p2sh_transaction()
-    #test_for_p2pk_transaction()
-    ##test_for_sig_hash_bip143()
-    #test_for_p2wsh_transaction()
-    #test_ecdsa_signature()
-    #test_schnorr_signature()
+    test_for_p2pkh_transaction()
+    test_for_p2sh_transaction()
+    test_for_p2pk_transaction()
+    #test_for_sig_hash_bip143()
+    test_for_p2wsh_transaction()
+    test_ecdsa_signature()
+    test_schnorr_signature()
     test_schnorr_musig()
 
 if __name__ == "__main__":

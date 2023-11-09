@@ -7,7 +7,7 @@ class ECDSA:
             #y² = x³ +a*x + b mod p
             self.a = 0
             self.b = 7
-            self.p = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 -1
+            self.p = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 -1 #115792089237316195423570985008687907852837564279074904382605163141518161494337 #
             self.max_points = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"
             self.max_points_int: int = int(self.max_points, 16)
             self.generator_point = (55066263022277343669578718895168534326250603453777594175500187360389116729240, 32670510020758816978083085130507043184471273380659243275938904335757337482424)
@@ -27,9 +27,12 @@ class ECDSA:
 
     def ec_addition(self, P1, P2):
         
-        s = ((P2[1] - P1[1]) * self.gcdExtended(self.p, (P2[0] - P1[0]))[2]) % self.p
-        x = (pow(s,2) - P1[0] - P2[0]) % self.p
-        y = (s * (P1[0] - x) - P1[1]) % self.p
+        if P1[0] == P2[0] and P1[1] == P2[1]:
+            (x,y) = self.ec_doubling(P1)
+        else:
+            s = ((P2[1] - P1[1]) * self.gcdExtended(self.p, (P2[0] - P1[0]))[2]) % self.p
+            x = (pow(s,2) - P1[0] - P2[0]) % self.p
+            y = (s * (P1[0] - x) - P1[1]) % self.p
 
         return (x,y)
 
@@ -110,24 +113,18 @@ class ECDSA:
         x_random_signing_point, y_random_signing_point = self.ec_multiply(random_number)
         
         R = (x_random_signing_point, y_random_signing_point)
-        s = (random_number - hash_of_data_to_sign * key_private) % self.max_points_int
-
-        ##use the low s value (BIP 62: Dealing with malleability)
-        #if (s > self.max_points_int / 2):
-        #    s = self.max_points_int - s
+         
+        s = (random_number + hash_of_data_to_sign * key_private) % self.max_points_int
 
         return R, s
     
 
     def verify_signature_schnorr(self, hash_of_data_to_sign, signature, public_key):
 
-        P1 = self.ec_multiply(hash_of_data_to_sign, public_key)
-        P2 = self.ec_multiply(signature[1])
-        x, y = self.ec_addition(P1, P2)
+        v1 = self.ec_multiply(signature[1])
+        v2 = self.ec_addition(signature[0], self.ec_multiply(hash_of_data_to_sign, public_key))
 
-        print(f"{x,y}")
-
-        return (x, y) == signature[0]
+        return v1 == v2
         
 
     def calculate_public_key(self, private_key: int, compressed: bool=True) -> bytes:

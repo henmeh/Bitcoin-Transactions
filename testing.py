@@ -160,7 +160,7 @@ def test_schnorr_musig():
     data = "Hello"
     data_hex = converter.convert_string_to_hex(data)
     hash_of_data = hash.sha256(bytes.fromhex(data_hex) + bytes.fromhex(hex(added_keys_public[0])[2:]) + bytes.fromhex(hex(added_r_values[0])[2:]))
-
+    
     s1 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_1, random_number)
     s2 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2, random_number)
 
@@ -171,16 +171,58 @@ def test_schnorr_musig():
     
 
     print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), added_keys_public))
+    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_1))   
+    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_2))
+
+
+def test_schnorr_musig_attack():
+    random_number = 123456789
+    key_private_1 = 12345678987654321
+    key_public_1 = curve.ec_multiply(key_private_1)
+    R1 = curve.ec_multiply(random_number)
+
+    #attacker
+    key_private_2 = 98765432123214789
+    key_public_2 = curve.ec_multiply(key_private_2)
+    p = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 -1
+    inverse_key_public_1 = (key_public_1[0], (p-key_public_1[1]))
+    key_public_2_prime = curve.ec_addition(key_public_2, inverse_key_public_1)
+    R2 = curve.ec_multiply(random_number)
+
+    #print(key_public_2)
+    #print(curve.ec_addition(key_public_2_prime, key_public_1))
+
+    added_keys_public = curve.ec_addition(key_public_1, key_public_2_prime)
+    added_r_values = curve.ec_addition(R1, R2)
+
+    data = "Hello"
+    data_hex = converter.convert_string_to_hex(data)
+    hash_of_data = hash.sha256(bytes.fromhex(data_hex) + bytes.fromhex(hex(added_keys_public[0])[2:]) + bytes.fromhex(hex(added_r_values[0])[2:]))
+    
+    s1 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_1, random_number)
+    s2 = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2, random_number)
+
+    max_points = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"
+    max_points_int = int(max_points, 16)
+
+    added_s_values = (s1 + s2) % max_points_int
+    
+    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), added_keys_public))
+    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_1))   
+    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_2))
+
+
 
 def main():
-    test_for_p2pkh_transaction()
-    test_for_p2sh_transaction()
-    test_for_p2pk_transaction()
-    #test_for_sig_hash_bip143()
-    test_for_p2wsh_transaction()
-    test_ecdsa_signature()
-    test_schnorr_signature()
-    test_schnorr_musig()
+    #test_for_p2pkh_transaction()
+    #test_for_p2sh_transaction()
+    #test_for_p2pk_transaction()
+    ##test_for_sig_hash_bip143()
+    #test_for_p2wsh_transaction()
+    #test_ecdsa_signature()
+    #test_schnorr_signature()
+    #test_schnorr_musig()
+    test_schnorr_musig_attack()
 
 if __name__ == "__main__":
     main()

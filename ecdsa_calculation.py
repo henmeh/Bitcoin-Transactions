@@ -35,7 +35,7 @@ class ECDSA:
             y = (s * (P1[0] - x) - P1[1]) % self.p
 
         return (x,y)
-
+    
 
     def ec_doubling(self, P1):
         

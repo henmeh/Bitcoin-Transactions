@@ -208,14 +208,14 @@ def test_schnorr_musig_attack():
 
 
 def main():
-    #test_for_p2pkh_transaction()
-    #test_for_p2sh_transaction()
-    #test_for_p2pk_transaction()
-    ##test_for_sig_hash_bip143()
-    #test_for_p2wsh_transaction()
-    #test_ecdsa_signature()
-    #test_schnorr_signature()
-    #test_schnorr_musig()
+    test_for_p2pkh_transaction()
+    test_for_p2sh_transaction()
+    test_for_p2pk_transaction()
+    #test_for_sig_hash_bip143()
+    test_for_p2wsh_transaction()
+    test_ecdsa_signature()
+    test_schnorr_signature()
+    test_schnorr_musig()
     test_schnorr_musig_attack()
 
 if __name__ == "__main__":

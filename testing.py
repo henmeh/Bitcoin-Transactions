@@ -32,7 +32,7 @@ def test_for_p2pkh_transaction():
     script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
     raw_transaction.sign_input(0, private_key_int, script_sig)
 
-    print(raw_transaction.serialize().hex() == "0100000001d5691f2805a24b7562d0a5b77663ee62d153b87e700e2cc3ba564c34d6f90bca010000006a473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207d788ef22d22ba7373a3ab2f70cea2475c75fb8bc78a2c4d71fb9d05fd724d3a012103c4f5245042eab9fe9fcd5c575f0dbcb2713b796bf62194dab3c4515ed1f9eec8ffffffff0128230000000000001976a914196ccd42e9392eba4baeccc27046373e9c0e91e388acffffffff")
+    assert raw_transaction.serialize().hex() == "0100000001d5691f2805a24b7562d0a5b77663ee62d153b87e700e2cc3ba564c34d6f90bca010000006a473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207d788ef22d22ba7373a3ab2f70cea2475c75fb8bc78a2c4d71fb9d05fd724d3a012103c4f5245042eab9fe9fcd5c575f0dbcb2713b796bf62194dab3c4515ed1f9eec8ffffffff0128230000000000001976a914196ccd42e9392eba4baeccc27046373e9c0e91e388acffffffff"
 
 
 def test_for_p2sh_transaction():
@@ -54,7 +54,7 @@ def test_for_p2sh_transaction():
     transaction_output = TxOut(amount_to_spent, ps2h)
     raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
 
-    print(raw_transaction.serialize().hex() == "0100000001232cf31cf1a4207abc80f5bf6ba675a41b0bb41c732ceedefca14259f837d299000000002a1374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff01401f00000000000017a91463b256137edbbaaad52286528c4dd75a393427bc87ffffffff")
+    assert raw_transaction.serialize().hex() == "0100000001232cf31cf1a4207abc80f5bf6ba675a41b0bb41c732ceedefca14259f837d299000000002a1374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff01401f00000000000017a91463b256137edbbaaad52286528c4dd75a393427bc87ffffffff"
 
 
 def test_for_p2pk_transaction():
@@ -77,7 +77,7 @@ def test_for_p2pk_transaction():
     script_sig = Script().parse(BytesIO(bytes.fromhex(f"{hex(len(script_pub_key_to_spent)//2)[2:]}{script_pub_key_to_spent}")))
     raw_transaction.sign_input_p2pk(0, private_key_int_receiver, script_sig)
 
-    print(raw_transaction.serialize().hex() == "010000000191f2e33d1434f298d307f3bd9b2d4b190507207c90473dc065b3ad9ede4400f60000000048473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb0220025c8bd849c4bd110f0a022d4a668d578c5de2b6660b9598f94d62cef8ec66f301ffffffff01401f0000000000001976a9146abfd93ee84140a3c6db55bc5903561c995b392888acffffffff") 
+    assert raw_transaction.serialize().hex() == "010000000191f2e33d1434f298d307f3bd9b2d4b190507207c90473dc065b3ad9ede4400f60000000048473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb0220025c8bd849c4bd110f0a022d4a668d578c5de2b6660b9598f94d62cef8ec66f301ffffffff01401f0000000000001976a9146abfd93ee84140a3c6db55bc5903561c995b392888acffffffff"
 
 
 def test_for_sig_hash_bip143():
@@ -90,7 +90,7 @@ def test_for_sig_hash_bip143():
 
     transaction.sign_input_segwit(1, int("619c335025c7f4012e556c2a58b2506e30b8511b53ade95ea316fd8c3286feb9", 16), script_code, amount_to_send)
 
-    print(transaction.serialize_segwit().hex() == "01000000000102fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac02473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02201d2c9359745c1fa50d65edeeb0d2132d3636ad9beffe485df0d2bf3e904650e80121025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee635711000000")
+    assert transaction.serialize_segwit().hex() == "01000000000102fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac02473044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02201d2c9359745c1fa50d65edeeb0d2132d3636ad9beffe485df0d2bf3e904650e80121025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee635711000000"
 
 
 def test_for_p2wsh_transaction():
@@ -114,7 +114,7 @@ def test_for_p2wsh_transaction():
     transaction_output = TxOut(amount_to_spent, p2wsh)
     raw_transaction = Tx(version, [transaction_input], [transaction_output], locktime)
 
-    print(raw_transaction.serialize_segwit().hex() == "0100000000010176744a70cf19cafd38b5955eaf658ceb34f5f9bcdb8d3639b26bcd6d324483830000000000ffffffff01401f00000000000022002012bd027208ce2c995ec6d15425934ce52a6087248da62ff0c3d811f994d080d5021374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff")
+    assert raw_transaction.serialize_segwit().hex() == "0100000000010176744a70cf19cafd38b5955eaf658ceb34f5f9bcdb8d3639b26bcd6d324483830000000000ffffffff01401f00000000000022002012bd027208ce2c995ec6d15425934ce52a6087248da62ff0c3d811f994d080d5021374686973206973206261736535382079616c6c151374686973206973206261736535382079616c6c87ffffffff"
 
 
 def test_ecdsa_signature():
@@ -126,7 +126,7 @@ def test_ecdsa_signature():
 
     ecdsa_signature = curve.sign_data(int(hash_of_data.hex(),16), key_private)
 
-    print(curve.verify_signature(int(hash_of_data.hex(),16), ecdsa_signature, key_public))
+    assert curve.verify_signature(int(hash_of_data.hex(),16), ecdsa_signature, key_public) == True
 
 
 def test_schnorr_signature():
@@ -141,7 +141,7 @@ def test_schnorr_signature():
 
     s = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private, random_number)
 
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (R, s), key_public))
+    assert curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (R, s), key_public) == True
 
 
 def test_schnorr_musig():
@@ -168,11 +168,10 @@ def test_schnorr_musig():
     max_points_int = int(max_points, 16)
 
     added_s_values = (s1 + s2) % max_points_int
-    
 
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), added_keys_public))
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_1))   
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_2))
+    assert curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), added_keys_public) == True
+    assert curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_1) == False   
+    assert curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, added_s_values), key_public_2) == False
 
 
 def test_schnorr_musig_attack():
@@ -201,22 +200,6 @@ def test_schnorr_musig_attack():
     
     s2_value = curve.sign_data_schnorr(int(hash_of_data.hex(),16), key_private_2, random_number_2)
 
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, s2_value), added_keys_public))
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, s2_value), key_public_1))   
-    print(curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, s2_value), key_public_2))
-
-
-
-def main():
-    test_for_p2pkh_transaction()
-    test_for_p2sh_transaction()
-    test_for_p2pk_transaction()
-    #test_for_sig_hash_bip143()
-    test_for_p2wsh_transaction()
-    test_ecdsa_signature()
-    test_schnorr_signature()
-    test_schnorr_musig()
-    test_schnorr_musig_attack()
-
-if __name__ == "__main__":
-    main()
+    assert curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, s2_value), added_keys_public) == True
+    assert curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, s2_value), key_public_1) == False   
+    assert curve.verify_signature_schnorr(int(hash_of_data.hex(),16), (added_r_values, s2_value), key_public_2) == True

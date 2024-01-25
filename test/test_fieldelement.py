@@ -24,7 +24,7 @@ class TestFieldElement:
                           ("FieldElement(4,31)**-4 * FieldElement(11,31)", FieldElement(13,31))]
 
 
-    def test_init_error(self):
+    def test_init_for_value_error(self):
         with pytest.raises(ValueError) as excinfo:
             FieldElement(10,3)
         assert "Num 10 not in field range 0 to 2" in str(excinfo.value)
@@ -58,7 +58,7 @@ class TestFieldElement:
         assert eval(test_input) == expected
 
 
-    def test_add_type_error(self):
+    def test_add_for_type_error(self):
         with pytest.raises(TypeError) as excinfo:
             x = FieldElement(3, 10) + FieldElement(4, 11)
         assert "Numbers must be in the same modulo field" in str(excinfo.value)
@@ -69,7 +69,7 @@ class TestFieldElement:
         assert eval(test_input) == expected
 
 
-    def test_sub_type_error(self):
+    def test_sub_for_type_error(self):
         with pytest.raises(TypeError) as excinfo:
             x = FieldElement(3, 10) - FieldElement(4, 11)
         assert "Numbers must be in the same modulo field" in str(excinfo.value)
@@ -80,7 +80,7 @@ class TestFieldElement:
         assert eval(test_input) == expected
 
 
-    def test_mul_type_error(self):
+    def test_mul_for_type_error(self):
         with pytest.raises(TypeError) as excinfo:
             x = FieldElement(3, 10) * FieldElement(4, 11)
         assert "Numbers must be in the same modulo field" in str(excinfo.value)
@@ -96,7 +96,7 @@ class TestFieldElement:
         assert eval(test_input) == expected
 
 
-    def test_div_type_error(self):
+    def test_div_for_type_error(self):
         with pytest.raises(TypeError) as excinfo:
             x = FieldElement(3, 10) / FieldElement(4, 11)
         assert "Numbers must be in the same modulo field" in str(excinfo.value)

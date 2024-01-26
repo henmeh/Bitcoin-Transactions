@@ -21,6 +21,12 @@ class TestECCalculation:
                           ("ECPoint(3, 7, 5, 7) + ECPoint(-1, -1, 5, 7)", ECPoint(2, -5, 5, 7)),
                           ("ECPoint(0, 0, 0, 0) + ECPoint(0, 0, 0, 0)", ECPoint(None, None, 0, 0)),
                           ("ECPoint(-1, 1, 5, 7) + ECPoint(-1, 1, 5, 7)", ECPoint(18, -77, 5, 7))]
+    
+
+    test_add_parameter_for_adding_fieldelements = [(192, 105, 17, 56, 170, 142), (47, 71, 117, 141, 60, 139), (143, 98, 76, 66, 47, 71)]
+
+
+    test_add_parameter_for_rmul_fieldelements = [(2, 192, 105, 49, 71), (2, 143, 98, 64, 168), (2, 47, 71, 36, 111), (4, 47, 71, 194, 51), (8, 47, 71, 116, 55), (21, 47, 71, None, None)]
 
 
     def test_init_for_value_error(self):
@@ -70,4 +76,40 @@ class TestECCalculation:
     def test_add(self, test_input, expected):
         assert eval(test_input) == expected
     
-    
+
+    def test_add_for_adding_fieldelements(self):
+        prime = 223
+        a = FieldElement(0, prime)
+        b = FieldElement(7, prime)
+
+        for x1_raw, y1_raw, x2_raw, y2_raw, x3_raw, y3_raw in self.test_add_parameter_for_adding_fieldelements:
+            x1 = FieldElement(x1_raw, prime)
+            y1 = FieldElement(y1_raw, prime)
+            p1 = ECPoint(x1, y1, a, b)
+            x2 = FieldElement(x2_raw, prime)
+            y2 = FieldElement(y2_raw, prime)
+            p2 = ECPoint(x2, y2, a, b)
+            x3 = FieldElement(x3_raw, prime)
+            y3 = FieldElement(y3_raw, prime)
+            p3 = ECPoint(x3, y3, a, b)
+            
+            assert p1 + p2 == p3
+
+
+    def test_rmul(self):
+        prime = 223
+        a = FieldElement(0, prime)
+        b = FieldElement(7, prime)
+        
+        for s, x1_raw, y1_raw, x2_raw, y2_raw in self.test_add_parameter_for_rmul_fieldelements:
+            x1 = FieldElement(x1_raw, prime)
+            y1 = FieldElement(y1_raw, prime)
+            p1 = ECPoint(x1, y1, a, b)
+            if x2_raw is None:
+                p2 = ECPoint(None, None, a, b)
+            else:
+                x2 = FieldElement(x2_raw, prime)
+                y2 = FieldElement(y2_raw, prime)
+                p2 = ECPoint(x2, y2, a, b)
+
+            assert s * p1 == p2

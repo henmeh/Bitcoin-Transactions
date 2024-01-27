@@ -77,4 +77,24 @@ class PrivateKey(Secp256k1):
     
     
     def get_public_key_coordinates(self):
-        return (self.public_key.x_coordinate.num, self.public_key.y_coordinate.num,)
+        return (self.public_key.x_coordinate.num, self.public_key.y_coordinate.num)
+
+
+class PublicKey(Secp256k1):
+
+    def __init__(self, x_coordinate, y_coordinate):
+        self.public_key_point = ECPoint(FieldElement(x_coordinate, self.p), FieldElement(y_coordinate, self.p), self.a, self.b)
+    
+
+    #SEC == Standards for Efficient Cryptography
+    def sec_format_uncompressed(self):
+        return b'\x04' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big') + self.public_key_point.y_coordinate.num.to_bytes(32, 'big')
+    
+
+    def sec_format_compressed(self):
+        y_coordinate_is_even = self.public_key_point.y_coordinate.num % 2 == 0
+
+        if y_coordinate_is_even:
+            return b'\x02' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big')
+        else:
+            return b'\x03' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big')

@@ -3,7 +3,7 @@ from src.fieldelement import FieldElement
 
 class ECPoint:
     """
-        y³ = x² + a * x + b
+        y² = x³ + a * x + b
     """
     def __init__(self, x_coordinate, y_coordinate, a_param, b_param):
         self.a_param = a_param

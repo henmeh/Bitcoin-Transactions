@@ -98,3 +98,33 @@ class PublicKey(Secp256k1):
             return b'\x02' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big')
         else:
             return b'\x03' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big')
+    
+
+    def parse_public_key(self, public_key_sec_bin):
+        public_key_first_byte = public_key_sec_bin[0] 
+        is_uncompressed = public_key_first_byte == 4
+        is_even = public_key_first_byte == 2
+        
+        if is_uncompressed:
+            x_coordinate = int.from_bytes(public_key_sec_bin[1:33], 'big')
+            y_coordinate = int.from_bytes(public_key_sec_bin[33:65], 'big')
+            print(f"{x_coordinate}   {y_coordinate}")
+            print(f"{hex(x_coordinate)}   {hex(y_coordinate)}")
+            return PublicKey(x_coordinate, y_coordinate)
+        
+        x = FieldElement(int.from_bytes(public_key_sec_bin[1:], 'big'), self.p)
+        alpha = x**3 + self.b
+        beta = alpha.sqrt()
+
+        if beta.num % 2 == 0:
+            even_beta = beta
+            odd_beta = FieldElement(self.p - beta.num, self.p)
+        else:
+            even_beta = FieldElement(self.p - beta.num, self.p)
+            odd_beta = beta
+        if is_even:
+            print(f"{x}   {even_beta}")
+            return ECPoint(x, even_beta, self.a, self.b)
+        else:
+            print(f"{x}   {odd_beta}")
+            return ECPoint(x, odd_beta, self.a, self.b)

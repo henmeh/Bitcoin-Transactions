@@ -59,3 +59,7 @@ class FieldElement:
     def __rmul__(self, coefficient):
         num = (self.num * coefficient) % self.prime
         return self.__class__(num=num, prime=self.prime)
+
+
+    def sqrt(self):
+        return self**((self.prime) // 4)

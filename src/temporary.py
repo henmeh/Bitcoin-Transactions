@@ -1,0 +1,8 @@
+import sys
+sys.path.append('/media/henning/Volume/Programming/Bitcoin/Bitcoin-Transactions/')
+
+from src.ecdsa import PublicKey
+
+test__instance = PublicKey(0x887387e452b8eacc4acfde10d9aaf7f6d9a0f975aabb10d006e4da568744d06c, 0x61de6d95231cd89026e286df3b6ae4a894a3378e393e93a0f45b666329a0ae34)
+
+print(test__instance.parse_public_key(bytes.fromhex("049d5ca49670cbe4c3bfa84c96a8c87df086c6ea6a24ba6b809c9de234496808d56fa15cc7f3d38cda98dee2419f415b7513dde1301f8643cd9245aea7f3f911f9")))

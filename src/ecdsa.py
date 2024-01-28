@@ -21,14 +21,14 @@ class Secp256k1:
         return Signature(r, s)
     
 
-    def verify_signature(self, public_key: tuple, signature, data):
+    def verify_signature(self, public_key, signature, data):
         
-        pub_key = ECPoint(FieldElement(public_key[0], self.p), FieldElement(public_key[1], self.p), self.a, self.b)
+        #pub_key = ECPoint(FieldElement(public_key[0], self.p), FieldElement(public_key[1], self.p), self.a, self.b)
 
         w = pow(signature.s, self.n - 2, self.n)
         u1 = (w * data) % self.n
         u2 = (w * signature.r) % self.n
-        point = u1 * self.G + u2 * pub_key
+        point = u1 * self.G + u2 * public_key
 
         return point.x_coordinate.num == signature.r
     
@@ -76,17 +76,19 @@ class PrivateKey(Secp256k1):
         return self.private_key
     
     
-    def get_public_key_coordinates(self):
-        return (self.public_key.x_coordinate.num, self.public_key.y_coordinate.num)
+    def get_public_key(self):
+        return PublicKey(self.public_key.x_coordinate, self.public_key.y_coordinate)
 
 
 class PublicKey(Secp256k1, ECPoint):
 
-    def __init__(self, x_coordinate, y_coordinate):
+    def __init__(self, x_coordinate, y_coordinate, a = None, b = None):
+        a = self.a
+        b = self.b
         if type(x_coordinate) == int:
-            super().__init__(FieldElement(x_coordinate, self.p), FieldElement(y_coordinate, self.p), self.a, self.b)
+            super().__init__(FieldElement(x_coordinate, self.p), FieldElement(y_coordinate, self.p), a, b)
         else:
-            super().__init__(x_coordinate, y_coordinate, self.a, self.b)
+            super().__init__(x_coordinate, y_coordinate, a, b)
     
 
     #SEC == Standards for Efficient Cryptography

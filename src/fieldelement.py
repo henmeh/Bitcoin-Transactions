@@ -62,4 +62,4 @@ class FieldElement:
 
 
     def sqrt(self):
-        return self**((self.prime) // 4)
+        return self**((self.prime + 1) // 4)

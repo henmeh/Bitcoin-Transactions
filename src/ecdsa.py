@@ -80,26 +80,30 @@ class PrivateKey(Secp256k1):
         return (self.public_key.x_coordinate.num, self.public_key.y_coordinate.num)
 
 
-class PublicKey(Secp256k1):
+class PublicKey(Secp256k1, ECPoint):
 
     def __init__(self, x_coordinate, y_coordinate):
-        self.public_key_point = ECPoint(FieldElement(x_coordinate, self.p), FieldElement(y_coordinate, self.p), self.a, self.b)
+        if type(x_coordinate) == int:
+            super().__init__(FieldElement(x_coordinate, self.p), FieldElement(y_coordinate, self.p), self.a, self.b)
+        else:
+            super().__init__(x_coordinate, y_coordinate, self.a, self.b)
     
 
     #SEC == Standards for Efficient Cryptography
     def sec_format_uncompressed(self):
-        return b'\x04' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big') + self.public_key_point.y_coordinate.num.to_bytes(32, 'big')
+        return b'\x04' + self.x_coordinate.num.to_bytes(32, 'big') + self.y_coordinate.num.to_bytes(32, 'big')
     
 
     def sec_format_compressed(self):
-        y_coordinate_is_even = self.public_key_point.y_coordinate.num % 2 == 0
+        y_coordinate_is_even = self.y_coordinate.num % 2 == 0
 
         if y_coordinate_is_even:
-            return b'\x02' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big')
+            return b'\x02' + self.x_coordinate.num.to_bytes(32, 'big')
         else:
-            return b'\x03' + self.public_key_point.x_coordinate.num.to_bytes(32, 'big')
+            return b'\x03' + self.x_coordinate.num.to_bytes(32, 'big')
     
 
+    @classmethod
     def parse_public_key(self, public_key_sec_bin):
         public_key_first_byte = public_key_sec_bin[0] 
         is_uncompressed = public_key_first_byte == 4
@@ -108,8 +112,6 @@ class PublicKey(Secp256k1):
         if is_uncompressed:
             x_coordinate = int.from_bytes(public_key_sec_bin[1:33], 'big')
             y_coordinate = int.from_bytes(public_key_sec_bin[33:65], 'big')
-            print(f"{x_coordinate}   {y_coordinate}")
-            print(f"{hex(x_coordinate)}   {hex(y_coordinate)}")
             return PublicKey(x_coordinate, y_coordinate)
         
         x = FieldElement(int.from_bytes(public_key_sec_bin[1:], 'big'), self.p)
@@ -123,8 +125,6 @@ class PublicKey(Secp256k1):
             even_beta = FieldElement(self.p - beta.num, self.p)
             odd_beta = beta
         if is_even:
-            print(f"{x}   {even_beta}")
-            return ECPoint(x, even_beta, self.a, self.b)
+            return PublicKey(x.num, even_beta.num)
         else:
-            print(f"{x}   {odd_beta}")
-            return ECPoint(x, odd_beta, self.a, self.b)
+            return PublicKey(x.num, odd_beta.num)

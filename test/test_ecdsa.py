@@ -47,6 +47,15 @@ class TestPublicKey:
                                  "compressed": ["039d5ca49670cbe4c3bfa84c96a8c87df086c6ea6a24ba6b809c9de234496808d5",
                                                 "03a598a8030da6d86c6bc7f2f5144ea549d28211ea58faa70ebf4c1e665c1fe9b5",
                                                 "03aee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e"]}
+    
+
+    test_parse_public_key_parameter = [("PublicKey.parse_public_key(bytes.fromhex('049d5ca49670cbe4c3bfa84c96a8c87df086c6ea6a24ba6b809c9de234496808d56fa15cc7f3d38cda98dee2419f415b7513dde1301f8643cd9245aea7f3f911f9'))", PublicKey(0x9d5ca49670cbe4c3bfa84c96a8c87df086c6ea6a24ba6b809c9de234496808d5, 0x6fa15cc7f3d38cda98dee2419f415b7513dde1301f8643cd9245aea7f3f911f9)),
+                                       ("PublicKey.parse_public_key(bytes.fromhex('039d5ca49670cbe4c3bfa84c96a8c87df086c6ea6a24ba6b809c9de234496808d5'))", PublicKey(0x9d5ca49670cbe4c3bfa84c96a8c87df086c6ea6a24ba6b809c9de234496808d5, 0x6fa15cc7f3d38cda98dee2419f415b7513dde1301f8643cd9245aea7f3f911f9)),
+                                       ("PublicKey.parse_public_key(bytes.fromhex('04a598a8030da6d86c6bc7f2f5144ea549d28211ea58faa70ebf4c1e665c1fe9b5204b5d6f84822c307e4b4a7140737aec23fc63b65b35f86a10026dbd2d864e6b'))", PublicKey(0xa598a8030da6d86c6bc7f2f5144ea549d28211ea58faa70ebf4c1e665c1fe9b5, 0x204b5d6f84822c307e4b4a7140737aec23fc63b65b35f86a10026dbd2d864e6b)),
+                                       ("PublicKey.parse_public_key(bytes.fromhex('03a598a8030da6d86c6bc7f2f5144ea549d28211ea58faa70ebf4c1e665c1fe9b5'))", PublicKey(0xa598a8030da6d86c6bc7f2f5144ea549d28211ea58faa70ebf4c1e665c1fe9b5, 0x204b5d6f84822c307e4b4a7140737aec23fc63b65b35f86a10026dbd2d864e6b)),
+                                       ("PublicKey.parse_public_key(bytes.fromhex('04aee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e21ec53f40efac47ac1c5211b2123527e0e9b57ede790c4da1e72c91fb7da54a3'))", PublicKey(0xaee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e, 0x21ec53f40efac47ac1c5211b2123527e0e9b57ede790c4da1e72c91fb7da54a3)),
+                                       ("PublicKey.parse_public_key(bytes.fromhex('03aee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e'))", PublicKey(0xaee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e, 0x21ec53f40efac47ac1c5211b2123527e0e9b57ede790c4da1e72c91fb7da54a3)),]
+
 
     def test_sec_format(self):
 
@@ -57,3 +66,8 @@ class TestPublicKey:
 
             assert public_key_point.sec_format_uncompressed() == bytes.fromhex(self.test_sec_format_parameter["uncompressed"][i])
             assert public_key_point.sec_format_compressed() == bytes.fromhex(self.test_sec_format_parameter["compressed"][i])
+    
+
+    @pytest.mark.parametrize("test_input, expected", test_parse_public_key_parameter)
+    def test_parse_public_key(self, test_input, expected):
+        assert eval(test_input) == expected

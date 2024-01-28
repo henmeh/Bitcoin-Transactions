@@ -2,6 +2,8 @@ from src.ec_point import ECPoint
 from src.fieldelement import FieldElement
 import hashlib
 import hmac
+from io import BytesIO
+
 
 class Secp256k1:
 
@@ -63,7 +65,49 @@ class Signature:
     
     def __repr__(self):
         return f'Signature({self.r},{self.s})'
+    
 
+    #Distinguished Encoding Rules
+    #30 + length(r und s) + 02 + length(r) + r (big endian prepend with 00 if first byte r >= 80) and same for s
+    def der(self):
+        r_bytes = self.r.to_bytes(32, byteorder='big')
+        r_bytes = r_bytes.lstrip(b'\x00')
+        if r_bytes[0] & 0x80:
+            r_bytes = b'\x00' + r_bytes
+        result = bytes([2, len(r_bytes)]) + r_bytes
+
+        s_bytes = self.s.to_bytes(32, byteorder='big')
+        s_bytes = s_bytes.lstrip(b'\x00')
+        if s_bytes[0] & 0x80:
+            s_bytes = b'\x00' + s_bytes
+        result += bytes([2, len(s_bytes)]) + s_bytes
+
+        return bytes([0x30, len(result)]) + result
+    
+
+    @classmethod
+    def parse(cls, signature_bin):
+        s = BytesIO(signature_bin)
+        compound = s.read(1)[0]
+        if compound != 0x30:
+            raise SyntaxError("Bad Signature")
+        length = s.read(1)[0]
+        if length + 2 != len(signature_bin):
+            raise SyntaxError("Bad Signature Length")
+        marker = s.read(1)[0]
+        if marker != 0x02:
+            raise SyntaxError("Bad Signature")
+        rlength = s.read(1)[0]
+        r = int.from_bytes(s.read(rlength), 'big')
+        marker = s.read(1)[0]
+        if marker != 0x02:
+            raise SyntaxError("Bad Signature")
+        slength = s.read(1)[0]
+        s = int.from_bytes(s.read(slength), 'big')
+        if len(signature_bin) != 6 + rlength + slength:
+            raise SyntaxError("Signature has wrong length")
+        return cls(r, s)
+        
 
 class PrivateKey(Secp256k1):
 

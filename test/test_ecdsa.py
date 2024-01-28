@@ -33,10 +33,49 @@ class TestSignature:
                                      ("Signature(0xac8d1c87e51d0d441be8b3dd5b05c8795b48875dffe00b7ffcfac23010d3a395, 0x68342ceff8935ededd102dd876ffd6ba72d6a427a3edb13d26eb0781cb423c4).s", 0x68342ceff8935ededd102dd876ffd6ba72d6a427a3edb13d26eb0781cb423c4)]
 
 
+    test_signature_der_encoding_parameter = [(1, 2), (randint(0, 2**256), randint(0, 2**255)), (randint(0, 2**256), randint(0, 2**255)), (0x08f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb, 0x7577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255)]
+
+
     @pytest.mark.parametrize("test_input, expected", test_signature_init_parameter)
     def test_signature_init(self, test_input, expected):
         assert eval(test_input) == expected
+
+
+    def test_signature_der_encoding(self):
+        for r, s in self.test_signature_der_encoding_parameter:
+            sig = Signature(r, s)
+            der = sig.der()
+            sig2 = Signature.parse(der)
+            assert sig2.r == r
+            assert sig2.s == s   
+
     
+    def test_signature_der_encoding_for_error(self):
+        test_parameter = {"signatures": ["2044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255",
+                                         "3046022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255",
+                                         "3044032008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255",
+                                         "3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb01207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255",
+                                         "3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df0062"],
+                          "error": ["Bad Signature",
+                                    "Bad Signature Length",
+                                    "Bad Signature",
+                                    "Bad Signature",
+                                    "Signature has wrong length"]}
+
+        for i in range(len(test_parameter["signatures"])):
+            with pytest.raises(SyntaxError) as excinfo:
+                Signature.parse(bytes.fromhex(test_parameter["signatures"][i]))
+                assert test_parameter["error"][i] in str(excinfo.value)
+
+
+
+        #sig2 = Signature.parse(bytes.fromhex("3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255"))
+        #assert sig2.r == 0x08f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb
+    #   with pytest.raises(ValueError) as excinfo:
+    #            ECPoint(-2, 4, 5, 7)
+    #        assert "-2, 4 is not on the curve" in str(excinfo.value)
+
+#3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255 
 
 class TestPublicKey:
 

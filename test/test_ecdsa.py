@@ -96,16 +96,32 @@ class TestPublicKey:
                                        ("PublicKey.parse_public_key(bytes.fromhex('03aee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e'))", PublicKey(0xaee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e, 0x21ec53f40efac47ac1c5211b2123527e0e9b57ede790c4da1e72c91fb7da54a3)),]
 
 
+    test_calculate_base58_address_parameter = {"private_key": [888**3, 321, 4242424242],
+                                "mainnet_base58_address": ["148dY81A9BmdpMhvYEVznrM45kWN32vSCN", "1S6g2xBJSED7Qr9CYZib5f4PYVhHZiVfj", "1226JSptcStqn4Yq9aAmNXdwdc2ixuH9nb"],
+                                "testnet_base58_address": ["mieaqB68xDCtbUBYFoUNcmZNwk74xcBfTP", "mfx3y63A7TfTtXKkv7Y6QzsPFY6QCBCXiP", "mgY3bVusRUL6ZB2Ss999CSrGVbdRwVpM8s"],
+                                "is_compressed": [True, False, False]}
+
     def test_sec_format(self):
 
         for i in range(len(self.test_sec_format_parameter["private_key"])):
             private_key = PrivateKey(self.test_sec_format_parameter["private_key"][i])
             public_key = private_key.get_public_key()
 
-            assert public_key.sec_format_uncompressed() == bytes.fromhex(self.test_sec_format_parameter["uncompressed"][i])
-            assert public_key.sec_format_compressed() == bytes.fromhex(self.test_sec_format_parameter["compressed"][i])
-    
+            assert public_key.sec_format(compressed=True) == bytes.fromhex(self.test_sec_format_parameter["compressed"][i])
+            assert public_key.sec_format(compressed=False) == bytes.fromhex(self.test_sec_format_parameter["uncompressed"][i])
+            
 
     @pytest.mark.parametrize("test_input, expected", test_parse_public_key_parameter)
     def test_parse_public_key(self, test_input, expected):
         assert eval(test_input) == expected
+
+    
+    def test_calculate_base58_address(self):
+
+        for i in range(len(self.test_calculate_base58_address_parameter["private_key"])):
+            private_key = PrivateKey(self.test_calculate_base58_address_parameter["private_key"][i])
+            public_key = private_key.get_public_key()
+
+            assert public_key.calculate_base58_address(compressed=self.test_calculate_base58_address_parameter["is_compressed"][i], testnet=False) == self.test_calculate_base58_address_parameter["mainnet_base58_address"][i]
+            assert public_key.calculate_base58_address(compressed=self.test_calculate_base58_address_parameter["is_compressed"][i], testnet=True) == self.test_calculate_base58_address_parameter["testnet_base58_address"][i]
+

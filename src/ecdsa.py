@@ -1,5 +1,7 @@
 from src.ec_point import ECPoint
 from src.fieldelement import FieldElement
+from src.crypto import Crypto
+from src.helper import BASE58
 import hashlib
 import hmac
 from io import BytesIO
@@ -136,17 +138,15 @@ class PublicKey(Secp256k1, ECPoint):
     
 
     #SEC == Standards for Efficient Cryptography
-    def sec_format_uncompressed(self):
-        return b'\x04' + self.x_coordinate.num.to_bytes(32, 'big') + self.y_coordinate.num.to_bytes(32, 'big')
-    
-
-    def sec_format_compressed(self):
-        y_coordinate_is_even = self.y_coordinate.num % 2 == 0
-
-        if y_coordinate_is_even:
-            return b'\x02' + self.x_coordinate.num.to_bytes(32, 'big')
+    def sec_format(self, compressed=True):
+        if compressed:
+            y_coordinate_is_even = self.y_coordinate.num % 2 == 0
+            if y_coordinate_is_even:
+                return b'\x02' + self.x_coordinate.num.to_bytes(32, 'big')
+            else:
+                return b'\x03' + self.x_coordinate.num.to_bytes(32, 'big')
         else:
-            return b'\x03' + self.x_coordinate.num.to_bytes(32, 'big')
+            return b'\x04' + self.x_coordinate.num.to_bytes(32, 'big') + self.y_coordinate.num.to_bytes(32, 'big')
     
 
     @classmethod
@@ -174,3 +174,14 @@ class PublicKey(Secp256k1, ECPoint):
             return PublicKey(x.num, even_beta.num)
         else:
             return PublicKey(x.num, odd_beta.num)
+    
+
+    def calculate_base58_address(self, compressed=True, testnet=False):
+        hash160 = Crypto().hash160(self.sec_format(compressed=compressed))
+        if testnet:
+            prefix = b'\x6f'
+        else:
+            prefix = b'\x00'
+        checksum = Crypto().hash256(prefix + hash160)[:4]
+        
+        return BASE58().encode_base58(prefix + hash160 + checksum)

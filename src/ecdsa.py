@@ -124,6 +124,22 @@ class PrivateKey(Secp256k1):
     
     def get_public_key(self):
         return PublicKey(self.public_key.x_coordinate, self.public_key.y_coordinate)
+    
+
+    def convert_to_wif_format(self, compressed=True, testnet=False):
+        private_key_bytes = self.private_key.to_bytes(32, "big")
+        if testnet:
+            prefix = b'\xef'
+        else:
+            prefix = b'\x80'
+        
+        if compressed:
+            suffix = b'\x01'
+        else:
+            suffix = b''
+        checksum = Crypto().hash256(prefix + private_key_bytes + suffix)[:4]
+
+        return BASE58().encode_base58(prefix + private_key_bytes + suffix + checksum)
 
 
 class PublicKey(Secp256k1, ECPoint):
@@ -176,7 +192,7 @@ class PublicKey(Secp256k1, ECPoint):
             return PublicKey(x.num, odd_beta.num)
     
 
-    def calculate_base58_address(self, compressed=True, testnet=False):
+    def converto_to_base58_address(self, compressed=True, testnet=False):
         hash160 = Crypto().hash160(self.sec_format(compressed=compressed))
         if testnet:
             prefix = b'\x6f'

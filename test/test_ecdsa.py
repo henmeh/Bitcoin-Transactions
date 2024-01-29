@@ -67,16 +67,6 @@ class TestSignature:
                 Signature.parse(bytes.fromhex(test_parameter["signatures"][i]))
                 assert test_parameter["error"][i] in str(excinfo.value)
 
-
-
-        #sig2 = Signature.parse(bytes.fromhex("3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255"))
-        #assert sig2.r == 0x08f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb
-    #   with pytest.raises(ValueError) as excinfo:
-    #            ECPoint(-2, 4, 5, 7)
-    #        assert "-2, 4 is not on the curve" in str(excinfo.value)
-
-#3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255 
-
 class TestPublicKey:
 
     test_sec_format_parameter = {"private_key": [999**3, 123, 42424242],
@@ -96,7 +86,7 @@ class TestPublicKey:
                                        ("PublicKey.parse_public_key(bytes.fromhex('03aee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e'))", PublicKey(0xaee2e7d843f7430097859e2bc603abcc3274ff8169c1a469fee0f20614066f8e, 0x21ec53f40efac47ac1c5211b2123527e0e9b57ede790c4da1e72c91fb7da54a3)),]
 
 
-    test_calculate_base58_address_parameter = {"private_key": [888**3, 321, 4242424242],
+    test_convert_to_base58_address_parameter = {"private_key": [888**3, 321, 4242424242],
                                 "mainnet_base58_address": ["148dY81A9BmdpMhvYEVznrM45kWN32vSCN", "1S6g2xBJSED7Qr9CYZib5f4PYVhHZiVfj", "1226JSptcStqn4Yq9aAmNXdwdc2ixuH9nb"],
                                 "testnet_base58_address": ["mieaqB68xDCtbUBYFoUNcmZNwk74xcBfTP", "mfx3y63A7TfTtXKkv7Y6QzsPFY6QCBCXiP", "mgY3bVusRUL6ZB2Ss999CSrGVbdRwVpM8s"],
                                 "is_compressed": [True, False, False]}
@@ -116,12 +106,29 @@ class TestPublicKey:
         assert eval(test_input) == expected
 
     
-    def test_calculate_base58_address(self):
+    def test_convert_to_base58_address(self):
 
-        for i in range(len(self.test_calculate_base58_address_parameter["private_key"])):
-            private_key = PrivateKey(self.test_calculate_base58_address_parameter["private_key"][i])
+        for i in range(len(self.test_convert_to_base58_address_parameter["private_key"])):
+            private_key = PrivateKey(self.test_convert_to_base58_address_parameter["private_key"][i])
             public_key = private_key.get_public_key()
 
-            assert public_key.calculate_base58_address(compressed=self.test_calculate_base58_address_parameter["is_compressed"][i], testnet=False) == self.test_calculate_base58_address_parameter["mainnet_base58_address"][i]
-            assert public_key.calculate_base58_address(compressed=self.test_calculate_base58_address_parameter["is_compressed"][i], testnet=True) == self.test_calculate_base58_address_parameter["testnet_base58_address"][i]
+            assert public_key.converto_to_base58_address(compressed=self.test_convert_to_base58_address_parameter["is_compressed"][i], testnet=False) == self.test_convert_to_base58_address_parameter["mainnet_base58_address"][i]
+            assert public_key.converto_to_base58_address(compressed=self.test_convert_to_base58_address_parameter["is_compressed"][i], testnet=True) == self.test_convert_to_base58_address_parameter["testnet_base58_address"][i]
+
+
+class TestPrivateKey:
+
+    test_convert_to_wif_format_parameter = {"private_key": [2**256 - 2**199, 2**256 - 2**201, 0x0dba685b4511dbd3d368e5c4358a1277de9486447af7b3604a69b8d9d8b7889d, 0x1cca23de92fd1862fb5b76e5f4f50eb082165e5191e116c18ed1a6b24be6a53f],
+                                "wif_format": ["L5oLkpV3aqBJ4BgssVAsax1iRa77G5CVYnv9adQ6Z87te7TyUdSC", "93XfLeifX7Jx7n7ELGMAf1SUR6f9kgQs8Xke8WStMwUtrDucMzn", "5HvLFPDVgFZRK9cd4C5jcWki5Skz6fmKqi1GQJf5ZoMofid2Dty", "cNYfWuhDpbNM1JWc3c6JTrtrFVxU4AGhUKgw5f93NP2QaBqmxKkg"],
+                                "is_testnet": [False, True, False, True],
+                                "is_compressed": [True, False, False, True]}
+    
+
+    def test_convert_to_wif_format(self):
+
+        for i in range(len(self.test_convert_to_wif_format_parameter["private_key"])):
+            private_key = PrivateKey(self.test_convert_to_wif_format_parameter["private_key"][i])
+            assert private_key.convert_to_wif_format(compressed=self.test_convert_to_wif_format_parameter["is_compressed"][i], testnet=self.test_convert_to_wif_format_parameter["is_testnet"][i]) == self.test_convert_to_wif_format_parameter["wif_format"][i]
+
+
 

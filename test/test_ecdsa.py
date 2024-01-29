@@ -129,6 +129,3 @@ class TestPrivateKey:
         for i in range(len(self.test_convert_to_wif_format_parameter["private_key"])):
             private_key = PrivateKey(self.test_convert_to_wif_format_parameter["private_key"][i])
             assert private_key.convert_to_wif_format(compressed=self.test_convert_to_wif_format_parameter["is_compressed"][i], testnet=self.test_convert_to_wif_format_parameter["is_testnet"][i]) == self.test_convert_to_wif_format_parameter["wif_format"][i]
-
-
-

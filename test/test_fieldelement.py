@@ -25,9 +25,8 @@ class TestFieldElement:
 
 
     def test_init_for_value_error(self):
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Num 10 not in field range 0 to 2"):
             FieldElement(10,3)
-        assert "Num 10 not in field range 0 to 2" in str(excinfo.value)
 
 
     def test_init_correct(self):
@@ -59,9 +58,8 @@ class TestFieldElement:
 
 
     def test_add_for_type_error(self):
-        with pytest.raises(TypeError) as excinfo:
+        with pytest.raises(TypeError, match="Numbers must be in the same modulo field"):
             x = FieldElement(3, 10) + FieldElement(4, 11)
-        assert "Numbers must be in the same modulo field" in str(excinfo.value)
 
 
     @pytest.mark.parametrize("test_input, expected", test_sub_parameter)
@@ -70,9 +68,8 @@ class TestFieldElement:
 
 
     def test_sub_for_type_error(self):
-        with pytest.raises(TypeError) as excinfo:
+        with pytest.raises(TypeError, match="Numbers must be in the same modulo field"):
             x = FieldElement(3, 10) - FieldElement(4, 11)
-        assert "Numbers must be in the same modulo field" in str(excinfo.value)
 
 
     @pytest.mark.parametrize("test_input, expected", test_mul_parameter)
@@ -81,9 +78,8 @@ class TestFieldElement:
 
 
     def test_mul_for_type_error(self):
-        with pytest.raises(TypeError) as excinfo:
+        with pytest.raises(TypeError, match="Numbers must be in the same modulo field"):
             x = FieldElement(3, 10) * FieldElement(4, 11)
-        assert "Numbers must be in the same modulo field" in str(excinfo.value)
 
 
     @pytest.mark.parametrize("test_input, expected", test_pow_parameter)
@@ -97,6 +93,5 @@ class TestFieldElement:
 
 
     def test_div_for_type_error(self):
-        with pytest.raises(TypeError) as excinfo:
+        with pytest.raises(TypeError, match="Numbers must be in the same modulo field"):
             x = FieldElement(3, 10) / FieldElement(4, 11)
-        assert "Numbers must be in the same modulo field" in str(excinfo.value)

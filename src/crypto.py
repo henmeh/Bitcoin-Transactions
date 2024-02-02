@@ -1,31 +1,30 @@
 import hashlib
+
 from Crypto.Hash import RIPEMD160
 
 
-class Crypto:
+def hash160(data: bytes) -> bytes:
+    hash_160 = RIPEMD160.new()
+    hash_160.update(hashlib.sha256(data).digest())
 
-    def hash160(self, data):
-        hash160 = RIPEMD160.new()
-        hash160.update(hashlib.sha256(data).digest())
-
-        return hash160.digest()
-        
-
-    def dhash160(self, data):
-
-        sha256= hashlib.sha256(data).digest() 
-
-        hash160 = RIPEMD160.new()
-        hash160.update(sha256)
-
-        return hash160.digest()
+    return hash_160.digest()
 
 
-    def hash256(self, data):
+def dhash160(data: bytes) -> bytes:
 
-        return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+    sha_256 = hashlib.sha256(data).digest()
+
+    hash_160 = RIPEMD160.new()
+    hash_160.update(sha_256)
+
+    return hash_160.digest()
 
 
-    def sha256(self, data):
+def hash256(data: bytes) -> bytes:
 
-        return hashlib.sha256(data).digest()
+    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+
+
+def sha256(data: bytes) -> bytes:
+
+    return hashlib.sha256(data).digest()

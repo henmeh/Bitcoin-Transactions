@@ -1,6 +1,8 @@
-import pytest
+import re
 from random import randint
-from src.ecdsa import Secp256k1, Signature, PrivateKey, PublicKey
+
+import pytest
+from src.ecdsa import PrivateKey, PublicKey, Secp256k1, Signature
 
 
 class TestSecp256k1:
@@ -55,17 +57,17 @@ class TestSignature:
                                          "3046022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255",
                                          "3044032008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255",
                                          "3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb01207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df006255",
-                                         "3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df0062"],
+                                         "3045022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb02207577710fa3ff7f89576c74909b932f778c2b34ec1571973bc8c24987df00625524"],
                           "error": ["Bad Signature",
                                     "Bad Signature Length",
                                     "Bad Signature",
                                     "Bad Signature",
                                     "Signature has wrong length"]}
 
+        
         for i in range(len(test_parameter["signatures"])):
-            with pytest.raises(SyntaxError) as excinfo:
+            with pytest.raises(SyntaxError, match=test_parameter["error"][i]):
                 Signature.parse(bytes.fromhex(test_parameter["signatures"][i]))
-                assert test_parameter["error"][i] in str(excinfo.value)
 
 class TestPublicKey:
 

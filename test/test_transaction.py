@@ -1,6 +1,8 @@
-import pytest
 from io import BytesIO
+
+import pytest
 from src.transaction import Transaction
+
 
 class TestTransaction:
 

@@ -1,6 +1,7 @@
 import pytest
 from src.fieldelement import FieldElement
 
+
 class TestFieldElement:
 
     test_eq_ne_parameter = [("FieldElement(3,10) != FieldElement(4,10)", True),

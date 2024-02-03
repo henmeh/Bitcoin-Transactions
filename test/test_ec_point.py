@@ -1,6 +1,9 @@
+import re
+
 import pytest
 from src.ec_point import ECPoint
 from src.fieldelement import FieldElement
+
 
 class TestECCalculation:
 
@@ -30,9 +33,8 @@ class TestECCalculation:
 
 
     def test_init_for_value_error(self):
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="-2, 4 is not on the curve"):
             ECPoint(-2, 4, 5, 7)
-        assert "-2, 4 is not on the curve" in str(excinfo.value)
 
 
     def test_init_for_none(self):
@@ -67,9 +69,8 @@ class TestECCalculation:
     
 
     def test_add_for_type_error(self):
-        with pytest.raises(TypeError) as excinfo:
+        with pytest.raises(TypeError, match=re.escape("Points Point(3,7)_5_7, Point(infinity)_4_5 are not on the same curve")):
             ECPoint(3, 7, 5, 7) + ECPoint(None, None, 4, 5)
-        assert "Points Point(3,7)_5_7, Point(infinity)_4_5 are not on the same curve" in str(excinfo.value)
     
     
     @pytest.mark.parametrize("test_input, expected", test_add_parameter)

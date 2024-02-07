@@ -26,11 +26,11 @@ class CTx:
         version = little_endian_to_int(transaction_as_byte_stream.read(4))
         number_of_inputs = read_varint(transaction_as_byte_stream)
         inputs = []
-        for i in range(number_of_inputs):
+        for _ in range(number_of_inputs):
             inputs.append(CTxIn.parse_transaction_input(transaction_as_byte_stream))
         number_of_outputs = read_varint(transaction_as_byte_stream)        
         outputs = []
-        for i in range(number_of_outputs):
+        for _ in range(number_of_outputs):
             outputs.append(CTxOut.parse_transaction_output(transaction_as_byte_stream))
         locktime = little_endian_to_int(transaction_as_byte_stream.read(4))
 
@@ -61,7 +61,7 @@ class CTxIn:
     def parse_transaction_input(cls, transaction_input_as_byte_stream: BytesIO):
         previous_transaction_id = transaction_input_as_byte_stream.read(32)[::-1]
         previous_transaction_index = little_endian_to_int(transaction_input_as_byte_stream.read(4))
-        script_sig = Script.parse(transaction_input_as_byte_stream)
+        script_sig = Script.parse_script(transaction_input_as_byte_stream)
         sequence = little_endian_to_int(transaction_input_as_byte_stream.read(4))
 
         return cls(previous_transaction_id, previous_transaction_index, script_sig, sequence)
@@ -86,7 +86,7 @@ class CTxOut:
     @classmethod
     def parse_transaction_output(cls, transaction_output_as_byte_stream: BytesIO):
         amount = little_endian_to_int(transaction_output_as_byte_stream.read(8))
-        script_pubkey = Script.parse(transaction_output_as_byte_stream)
+        script_pubkey = Script.parse_script(transaction_output_as_byte_stream)
 
         return cls(amount, script_pubkey)
 
@@ -115,7 +115,7 @@ class TxFetcher:
                 raw = bytes.fromhex(response.text.strip())
             except ValueError:
                 raise ValueError('unexpected response: {}'.format(response.text))
-            tx = CTx.parse(BytesIO(raw), is_testnet=testnet)
+            tx = CTx.parse_transaction(BytesIO(raw), is_testnet=testnet)
             # make sure the tx we got matches to the hash we requested
             if tx.is_segwit:
                 computed = tx.id()
@@ -131,7 +131,7 @@ class TxFetcher:
     def load_cache(cls, filename):
         disk_cache = json.loads(open(filename, 'r').read())
         for k, raw_hex in disk_cache.items():
-            cls.cache[k] = CTx.parse(BytesIO(bytes.fromhex(raw_hex)))
+            cls.cache[k] = CTx.parse_transaction(BytesIO(bytes.fromhex(raw_hex)))
 
     @classmethod
     def dump_cache(cls, filename):

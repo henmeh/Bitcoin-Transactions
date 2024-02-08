@@ -1,5 +1,5 @@
 from io import BytesIO
-from src.helper import read_varint, little_endian_to_int
+from src.helper import read_varint, little_endian_to_int, int_to_little_endian, encode_varint
 
 class Script:
     def __init__(self, commands: list[bytes] = None):
@@ -41,3 +41,26 @@ class Script:
             raise SyntaxError("parsing script failed")
         
         return cls(commands)
+    
+
+    def serialize_script(self) -> str:
+        serialized_script = b''
+        for command in self.commands:
+            if isinstance(command, int):
+                serialized_script += int_to_little_endian(command, 1)
+            else:
+                length = len(command)
+                if length < 75:
+                    serialized_script += int_to_little_endian(length, 1)
+                elif length > 75 and length < 256:
+                    serialized_script += int_to_little_endian(76, 1)
+                    serialized_script += int_to_little_endian(length, 1)
+                elif length > 255 and length < 521:
+                    serialized_script += int_to_little_endian(77, 1)
+                    serialized_script += int_to_little_endian(length, 2)
+                else:
+                    raise ValueError("command is too long")
+                serialized_script += command
+        script_length = encode_varint(len(serialized_script))
+
+        return script_length + serialized_script

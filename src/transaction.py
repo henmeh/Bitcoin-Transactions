@@ -48,9 +48,44 @@ class CTx:
         transaction += int_to_little_endian(self.locktime, 4)
 
         return transaction
+    
+
+    def get_fee(self) -> int:
+        input_sum = 0
+        output_sum = 0
+        for tx_in in self.tx_ins:
+            input_sum += tx_in.get_value(self.is_testnet)
+        for tx_out in self.tx_outs:
+            output_sum += tx_out.amount
+        return input_sum - output_sum
+    
+
+    #def verify_transaction(self) -> bool:
+    #    if self.get_fee() < 0:
+    #        return False
+    #    for tx_in in self.tx_ins:
+    #        tx_in_script_pubkey = tx_in.get_script_pubkey()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #    return True
         
 class CTxIn:
-    def __init__(self, previous_transaction_id: bytes, previous_transaction_index: int, script_sig: "Script", sequence: int):
+    def __init__(self, previous_transaction_id: bytes, previous_transaction_index: int, script_sig: "Script" = None, sequence: int = 0xffffffff):
         self.previous_transaction_id = previous_transaction_id
         self.previous_transaction_index = previous_transaction_index
         self.script_sig = script_sig
@@ -58,7 +93,7 @@ class CTxIn:
 
     
     @classmethod
-    def parse_transaction_input(cls, transaction_input_as_byte_stream: BytesIO):
+    def parse_transaction_input(cls, transaction_input_as_byte_stream: BytesIO) -> "CTxIn":
         previous_transaction_id = transaction_input_as_byte_stream.read(32)[::-1]
         previous_transaction_index = little_endian_to_int(transaction_input_as_byte_stream.read(4))
         script_sig = Script.parse_script(transaction_input_as_byte_stream)
@@ -67,7 +102,7 @@ class CTxIn:
         return cls(previous_transaction_id, previous_transaction_index, script_sig, sequence)
 
 
-    def serialize_transaction_input(self):
+    def serialize_transaction_input(self) -> bytes:
         transaction_input = self.previous_transaction_id[::-1]
         transaction_input += int_to_little_endian(self.previous_transaction_index, 4)
         transaction_input += self.script_sig.serialize_script()
@@ -75,8 +110,18 @@ class CTxIn:
         return transaction_input
 
     
-    def fetch_tx(self, testnet=False):
-        return TxFetcher.fetch(self.previous_transaction_id.hex(), testnet=testnet)
+    def fetch_tx(self, is_testnet: bool=False):
+        return TxFetcher.fetch(self.previous_transaction_id.hex(), testnet=is_testnet)
+    
+
+    def get_value(self, is_testnet: bool = False) -> int:
+        tx = TxFetcher.fetch(self.previous_transaction_id.hex(), testnet=is_testnet)
+        return tx.tx_outs[self.previous_transaction_index].amount
+    
+
+    def get_script_pubkey(self, is_testnet: bool = False) -> "Script":
+        tx = TxFetcher.fetch(self.previous_transaction_id.hex(), testnet=is_testnet)
+        return tx.tx_outs[self.previous_transaction_index].script_pubkey
 
 class CTxOut:
     def __init__(self, amount: int, script_pubkey: "Script"):

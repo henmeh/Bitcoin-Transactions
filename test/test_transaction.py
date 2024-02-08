@@ -15,12 +15,37 @@ class TestTransaction:
                                    (CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).tx_ins[0].script_sig.serialize_script(), bytes.fromhex('6b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a')),
                                    (CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).tx_ins[0].sequence, 0xfffffffe)]
     
+    test_parse_outputs_parameter = [(len(CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).tx_outs), 2),
+                                    (CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).tx_outs[0].amount, 32454049),
+                                    (CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).tx_outs[0].script_pubkey.serialize_script(), bytes.fromhex('1976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac')),
+                                    (CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).tx_outs[1].amount, 10011545),
+                                    (CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).tx_outs[1].script_pubkey.serialize_script(), bytes.fromhex('1976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac'))]
+    
+    test_parse_locktime_parameter = [(CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).locktime, 410393)]
+
+    tx = CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy)))
+    test_serialize_transaction_parameter = [(tx.serialize_transaction().hex(),test_transaction_legacy)]
+
 
     @pytest.mark.parametrize("parsed_tx_value, expected_tx_value", test_parse_version_parameter)
     def test_parse_version(self, parsed_tx_value, expected_tx_value):
         assert parsed_tx_value == expected_tx_value
 
 
-    @pytest.mark.parametrize("parsed_tx_value, expected_tx_value", test_parse_inputs_parameter)
-    def test_parse_inputs(self, parsed_tx_value, expected_tx_value):
-        assert parsed_tx_value == expected_tx_value
+    @pytest.mark.parametrize("parsed_input_value, expected_input_value", test_parse_inputs_parameter)
+    def test_parse_inputs(self, parsed_input_value, expected_input_value):
+        assert parsed_input_value == expected_input_value
+
+
+    @pytest.mark.parametrize("parsed_output_value, expected_output_value", test_parse_outputs_parameter)
+    def test_parse_outputs(self, parsed_output_value, expected_output_value):
+        assert parsed_output_value == expected_output_value
+    
+
+    @pytest.mark.parametrize("parsed_locktime_value, expected_locktime_value", test_parse_locktime_parameter)
+    def test_parse_locktime(self, parsed_locktime_value, expected_locktime_value):
+        assert parsed_locktime_value == expected_locktime_value
+    
+    @pytest.mark.parametrize("serialized_value, serialized_expected", test_serialize_transaction_parameter)
+    def test_serialize_transaction(self, serialized_value, serialized_expected):
+        assert serialized_value == serialized_expected

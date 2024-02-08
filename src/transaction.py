@@ -41,10 +41,10 @@ class CTx:
         transaction = int_to_little_endian(self.version, 4)
         transaction += encode_varint(len(self.tx_ins))
         for tx_in in self.tx_ins:
-            transaction += tx_in.serialize()
+            transaction += tx_in.serialize_transaction_input()
         transaction += encode_varint(len(self.tx_outs))
         for tx_out in self.tx_outs:
-            transaction += tx_out.serialize()
+            transaction += tx_out.serialize_transaction_output()
         transaction += int_to_little_endian(self.locktime, 4)
 
         return transaction
@@ -70,7 +70,7 @@ class CTxIn:
     def serialize_transaction_input(self):
         transaction_input = self.previous_transaction_id[::-1]
         transaction_input += int_to_little_endian(self.previous_transaction_index, 4)
-        transaction_input += self.script_sig.serialize()
+        transaction_input += self.script_sig.serialize_script()
         transaction_input += int_to_little_endian(self.sequence, 4)
         return transaction_input
 
@@ -92,7 +92,7 @@ class CTxOut:
 
     def serialize_transaction_output(self):
         transaction_output = int_to_little_endian(self.amount, 8)
-        transaction_output += self.script_pubkey.serialize()
+        transaction_output += self.script_pubkey.serialize_script()
 
         return transaction_output
 

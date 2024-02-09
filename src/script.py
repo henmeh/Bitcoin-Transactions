@@ -1,12 +1,29 @@
 from io import BytesIO
 from src.helper import read_varint, little_endian_to_int, int_to_little_endian, encode_varint
 
+
+def p2pkh_script(h160: bytes) -> "Script":
+    return Script([0x76, 0xa9, h160, 0x88, 0xac])
+
+
+def p2sh_script(h160: bytes) -> "Script":
+    return Script([0xa9, h160, 0x87])
+
+
+def p2wpkh_script(h160: bytes) -> "Script":
+    return Script([0x00, h160])
+
+
+def p2wsh_script(h256: bytes) -> "Script":
+    return Script([0x00, h256])
+
 class Script:
     def __init__(self, commands: list[bytes] = None):
         if commands is None:
             self.commands = []
         else:
             self.commands = commands
+
 
     @classmethod
     def parse_script(cls, script_as_byte: BytesIO) -> "Script":

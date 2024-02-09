@@ -2,9 +2,10 @@ import json
 import requests
 from io import BytesIO
 
-from src.helper import little_endian_to_int, read_varint, int_to_little_endian, encode_varint
+from src.helper import little_endian_to_int, read_varint, int_to_little_endian, encode_varint, SIGHASH_ALL
 from src.crypto import hash256
 from src.script import Script
+from src.ecdsa import Secp256k1, PrivateKey
 
 
 class CTx:
@@ -60,29 +61,61 @@ class CTx:
         return input_sum - output_sum
     
 
-    #def verify_transaction(self) -> bool:
-    #    if self.get_fee() < 0:
-    #        return False
-    #    for tx_in in self.tx_ins:
-    #        tx_in_script_pubkey = tx_in.get_script_pubkey()
+    def get_sig_hash_for_legacy_transaction(self, input_index: int, redeem_script: "Script" = None) -> int:
+        data = int_to_little_endian(self.version, 4)
+        data += encode_varint(len(self.tx_ins))
 
+        for index, tx_in in enumerate(self.tx_ins):
+            if index == input_index:
+                if redeem_script:
+                    script_sig = redeem_script
+                else:
+                    script_sig = tx_in.get_script_pubkey(self.is_testnet)
+            else:
+                script_sig = None
 
+            data += CTxIn(
+                previous_transaction_id = tx_in.previous_transaction_id,
+                previous_transaction_index = tx_in.previous_transaction_index,
+                script_sig = script_sig,
+                sequence = tx_in.sequence).serialize_transaction_input()
+        
+        data += encode_varint(len(self.tx_outs))
 
+        for tx_out in self.tx_outs:
+            data += tx_out.serialize_transaction_output()
+        
+        data += int_to_little_endian(self.locktime, 4)
+        data += int_to_little_endian(SIGHASH_ALL, 4)
 
+        return int.from_bytes(hash256(data), "big")
+    
 
+    def verify_transaction(self) -> bool:
+        if self.get_fee() < 0:
+            return False
+        for index, tx_in in enumerate(self.tx_ins):
+            tx_in_script_pubkey = tx_in.get_script_pubkey(is_testnet=self.is_testnet)
+            signed_data = self.get_sig_hash_for_legacy_transaction(index)
+        
+            combinded_script = tx_in.script_sig + tx_in_script_pubkey
 
-
-
-
-
-
-
-
-
-
-
-
+            return combinded_script.evaluate(signed_data, combinded_script)
     #    return True
+    
+
+    def sign_transaction(self, input_index, private_key):
+        data_to_sign =self.get_sig_hash_for_legacy_transaction(input_index)
+        signature = Secp256k1().sign_data(private_key, data_to_sign)        
+        der_signature = signature.der()
+        der_signature_with_sighash = der_signature + SIGHASH_ALL.to_bytes(1, "big")
+        public_key_sec = PrivateKey(private_key).get_public_key().sec_format()
+
+        script_sig = Script([der_signature_with_sighash, public_key_sec])
+        
+        self.tx_ins[input_index].script_sig = script_sig
+
+    
         
 class CTxIn:
     def __init__(self, previous_transaction_id: bytes, previous_transaction_index: int, script_sig: "Script" = None, sequence: int = 0xffffffff):

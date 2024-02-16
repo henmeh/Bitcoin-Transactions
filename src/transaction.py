@@ -104,8 +104,8 @@ class CTx:
     #    return True
     
 
-    def sign_transaction(self, input_index, private_key):
-        data_to_sign =self.get_sig_hash_for_legacy_transaction(input_index)
+    def sign_transaction(self, input_index: int, private_key: int, redeem_script: "Script" = None):
+        data_to_sign =self.get_sig_hash_for_legacy_transaction(input_index, redeem_script=redeem_script)
         signature = Secp256k1().sign_data(private_key, data_to_sign)        
         der_signature = signature.der()
         der_signature_with_sighash = der_signature + SIGHASH_ALL.to_bytes(1, "big")

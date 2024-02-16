@@ -2,6 +2,10 @@ from io import BytesIO
 from src.helper import read_varint, little_endian_to_int, int_to_little_endian, encode_varint
 
 
+def p2pk_script(pub_key: bytes) -> "Script":
+    return Script([pub_key, 0xac])
+
+
 def p2pkh_script(h160: bytes) -> "Script":
     return Script([0x76, 0xa9, h160, 0x88, 0xac])
 

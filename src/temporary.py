@@ -2,9 +2,7 @@ import sys
 
 sys.path.append("/media/henning/Volume/Programming/Bitcoin/Bitcoin-Transactions/")
 
-from src.ecdsa import PrivateKey, PublicKey, Secp256k1, Signature
+from src.script import p2pk_script
 
-priv_key = PrivateKey(2 ** 256 - 2 ** 199)
-wif = priv_key.convert_to_wif_format()
 
-print(wif)
+print(p2pk_script(b'123'))

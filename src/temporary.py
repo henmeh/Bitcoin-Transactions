@@ -2,7 +2,8 @@ import sys
 
 sys.path.append("/media/henning/Volume/Programming/Bitcoin/Bitcoin-Transactions/")
 
-from src.script import p2pk_script
+from src.ecdsa import PrivateKey
 
+test = PrivateKey.convert_wif_format("cSoDYWXxTwTbnWBpTsgWiaJbD4ZTLpJ51nHppZRFKtCK418ERJEo")
 
-print(p2pk_script(b'123'))
+print(test.get_private_key_int())

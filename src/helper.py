@@ -1,5 +1,6 @@
 from io import BytesIO
 from src.crypto import hash256
+import base58
 
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
@@ -23,16 +24,16 @@ def encode_base58(s: bytes) -> str:
     return prefix + result
 
 
-def decode_base58(s):
+def decode_base58(s: str) -> bytes:
     num = 0
     for c in s:
         num *= 58
         num += BASE58_ALPHABET.index(c)
-    combined = num.to_bytes(25, byteorder='big')
+    combined = num.to_bytes(38, byteorder='big')
     checksum = combined[-4:]
     if hash256(combined[:-4])[:4] != checksum:
         raise ValueError('bad address: {} {}'.format(checksum, hash256(combined[:-4])[:4]))
-    return combined[1:-4]
+    return combined[1:-5]
 
 
 def little_endian_to_int(b: bytes) -> int:

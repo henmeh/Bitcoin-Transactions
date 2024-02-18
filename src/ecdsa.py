@@ -5,7 +5,7 @@ from io import BytesIO
 from src.crypto import hash160, hash256
 from src.ec_point import ECPoint
 from src.fieldelement import FieldElement
-from src.helper import encode_base58
+from src.helper import encode_base58, decode_base58
 
 
 class Secp256k1:
@@ -147,6 +147,12 @@ class PrivateKey(Secp256k1):
         checksum = hash256(prefix + private_key_bytes + suffix)[:4]
 
         return encode_base58(prefix + private_key_bytes + suffix + checksum)
+    
+
+    @classmethod
+    def convert_wif_format(cls, private_key_wif: str) -> "PrivateKey":
+        private_bytes = decode_base58(private_key_wif) 
+        return cls(int.from_bytes(private_bytes, "big"))
 
 
 class PublicKey(Secp256k1, ECPoint):

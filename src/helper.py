@@ -32,7 +32,7 @@ def decode_base58(s: str) -> bytes:
     combined = num.to_bytes(38, byteorder='big')
     checksum = combined[-4:]
     if hash256(combined[:-4])[:4] != checksum:
-        raise ValueError('bad address: {} {}'.format(checksum, hash256(combined[:-4])[:4]))
+        raise ValueError(f'bad address: {checksum} {hash256(combined[:-4])[:4]}')
     return combined[1:-5]
 
 

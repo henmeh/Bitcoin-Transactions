@@ -15,6 +15,16 @@ class TestScript:
 
     test_serialize_script_parameter = [(script.serialize_script(), script_pubkey_bytes)]    
     
+    test_eq_parameter = [(script == script, True),
+                         (script == Script(), False),
+                         (Script() == script, False),
+                         (Script() == Script(), True)]
+    
+
+    @pytest.mark.parametrize("calculated_result, expected_result", test_eq_parameter)
+    def test_eq(self, calculated_result, expected_result):
+        assert calculated_result == expected_result
+
     
     def test_parse_script_for_syntax_error(self):
         with pytest.raises(SyntaxError, match="parsing script failed"):

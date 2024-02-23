@@ -29,6 +29,10 @@ class Script:
             self.commands = commands
 
 
+    def __eq__(self, other: "Script") -> bool:
+        return self.commands == other.commands
+    
+    
     @classmethod
     def parse_script(cls, script_as_byte: BytesIO) -> "Script":
         commands = []

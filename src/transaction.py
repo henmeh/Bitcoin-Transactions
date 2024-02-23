@@ -4,7 +4,7 @@ from io import BytesIO
 
 from src.helper import little_endian_to_int, read_varint, int_to_little_endian, encode_varint, SIGHASH_ALL
 from src.crypto import hash256
-from src.script import Script
+from src.script import Script, p2pk_script
 from src.ecdsa import Secp256k1, PrivateKey
 
 
@@ -111,7 +111,13 @@ class CTx:
         der_signature_with_sighash = der_signature + SIGHASH_ALL.to_bytes(1, "big")
         public_key_sec = PrivateKey(private_key).get_public_key().sec_format()
 
-        script_sig = Script([der_signature_with_sighash, public_key_sec])
+        if redeem_script is not None:
+            if redeem_script == p2pk_script(public_key_sec):
+                script_sig = Script([der_signature_with_sighash])
+            else:
+                script_sig = Script([der_signature_with_sighash, public_key_sec])
+        else:
+            script_sig = Script([der_signature_with_sighash, public_key_sec])
         
         self.tx_ins[input_index].script_sig = script_sig
 

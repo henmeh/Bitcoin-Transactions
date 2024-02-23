@@ -76,6 +76,5 @@ def main():
     print("This is your signed raw p2pkh transaction to spent the p2pk utxo")
     print(raw_transaction.serialize().hex()) 
 
-
 if __name__ == "__main__":
     main()

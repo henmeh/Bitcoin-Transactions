@@ -37,6 +37,8 @@ class Secp256k1:
             / FieldElement(temp_private_key, self.n)
         ).num
 
+        if s > self.n / 2:
+            s = self.n - s
         return Signature(r, s)
 
     def verify_signature(

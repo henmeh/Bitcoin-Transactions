@@ -4,7 +4,7 @@ from io import BytesIO
 
 from src.helper import little_endian_to_int, read_varint, int_to_little_endian, encode_varint, SIGHASH_ALL
 from src.crypto import hash256
-from src.script import Script, p2pk_script
+from src.script import Script, p2pk_script, p2ms_script
 from src.ecdsa import Secp256k1, PrivateKey
 
 
@@ -91,34 +91,29 @@ class CTx:
         return int.from_bytes(hash256(data), "big")
     
 
-    def verify_transaction(self) -> bool:
-        if self.get_fee() < 0:
-            return False
-        for index, tx_in in enumerate(self.tx_ins):
-            tx_in_script_pubkey = tx_in.get_script_pubkey(is_testnet=self.is_testnet)
-            signed_data = self.get_sig_hash_for_legacy_transaction(index)
-        
-            combinded_script = tx_in.script_sig + tx_in_script_pubkey
-
-            return combinded_script.evaluate(signed_data, combinded_script)
-    #    return True
-    
-
-    def sign_transaction(self, input_index: int, private_key: int, redeem_script: "Script" = None):
+    def sign_transaction(self, input_index: int, private_keys: list[int], redeem_script: "Script" = None, number_pub_keys_required: int = 1, number_pub_keys_available: int = 1):
         data_to_sign =self.get_sig_hash_for_legacy_transaction(input_index, redeem_script=redeem_script)
-        signature = Secp256k1().sign_data(private_key, data_to_sign)        
-        der_signature = signature.der()
-        der_signature_with_sighash = der_signature + SIGHASH_ALL.to_bytes(1, "big")
-        public_key_sec = PrivateKey(private_key).get_public_key().sec_format()
-
-        if redeem_script is not None:
-            if redeem_script == p2pk_script(public_key_sec):
-                script_sig = Script([der_signature_with_sighash])
-            else:
-                script_sig = Script([der_signature_with_sighash, public_key_sec])
-        else:
-            script_sig = Script([der_signature_with_sighash, public_key_sec])
+        der_signatures_with_sighash = []
+        public_keys_sec = []
         
+        for private_key in private_keys:
+            signature = Secp256k1().sign_data(private_key, data_to_sign)        
+            der_signature = signature.der()
+            der_signatures_with_sighash.append(der_signature + SIGHASH_ALL.to_bytes(1, "big"))
+            public_keys_sec.append(PrivateKey(private_key).get_public_key().sec_format())
+        
+        for index, public_key_sec in enumerate(public_keys_sec):
+            if redeem_script is not None:
+                if redeem_script == p2pk_script(public_key_sec):
+                    script_sig = Script([der_signatures_with_sighash[index]])
+                elif redeem_script == p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available):
+                    der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash
+                    script_sig = Script(der_signatures_with_sighash_new)
+                else:
+                    script_sig = Script([der_signatures_with_sighash[index], public_key_sec])
+            else:
+                script_sig = Script([der_signatures_with_sighash[index], public_key_sec])
+    
         self.tx_ins[input_index].script_sig = script_sig
 
     

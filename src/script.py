@@ -1,5 +1,5 @@
 from io import BytesIO
-from src.helper import read_varint, little_endian_to_int, int_to_little_endian, encode_varint
+from src.helper import read_varint, little_endian_to_int, int_to_little_endian, encode_varint, OPCODE_NUMBERS
 
 
 def p2pk_script(pub_key: bytes) -> "Script":
@@ -8,6 +8,15 @@ def p2pk_script(pub_key: bytes) -> "Script":
 
 def p2pkh_script(h160: bytes) -> "Script":
     return Script([0x76, 0xa9, h160, 0x88, 0xac])
+
+
+def p2ms_script(pub_keys: list[bytes], number_pub_keys_required: int, number_pub_keys_available: int) -> "Script":
+    script_commands = [OPCODE_NUMBERS[number_pub_keys_required]]
+    for pub_key in pub_keys:
+        script_commands.append(pub_key)
+    script_commands.append(OPCODE_NUMBERS[number_pub_keys_available])
+    script_commands.append(0xae)
+    return Script(script_commands)
 
 
 def p2sh_script(h160: bytes) -> "Script":

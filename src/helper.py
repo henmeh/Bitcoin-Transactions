@@ -7,6 +7,24 @@ SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
+OPCODE_NUMBERS = {
+    1: 0x51,
+    2: 0x52,
+    3: 0x53,
+    4: 0x54,
+    5: 0x55,
+    6: 0x56,
+    7: 0x57,
+    8: 0x58,
+    9: 0x59,
+    10: 0x5a,
+    11: 0x5b,
+    12: 0x5c,
+    13: 0x5d,
+    14: 0x5e,
+    15: 0x5f,
+    16: 0x60}
+
 
 def encode_base58(s: bytes) -> str:
     count = 0

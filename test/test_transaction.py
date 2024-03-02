@@ -2,6 +2,7 @@ from io import BytesIO
 
 import pytest
 from src.transaction import CTx, CTxIn
+from src.ecdsa import PrivateKey
 
 
 class TestTransaction:
@@ -109,4 +110,3 @@ class TestTransactionOutputs:
     @pytest.mark.parametrize("parsed_output_value, expected_output_value", test_parse_outputs_parameter)
     def test_parse_outputs(self, parsed_output_value, expected_output_value):
         assert parsed_output_value == expected_output_value
-   

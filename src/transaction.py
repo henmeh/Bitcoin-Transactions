@@ -3,8 +3,8 @@ import requests
 from io import BytesIO
 
 from src.helper import little_endian_to_int, read_varint, int_to_little_endian, encode_varint, SIGHASH_ALL
-from src.crypto import hash256
-from src.script import Script, p2pk_script, p2ms_script
+from src.crypto import hash256, hash160
+from src.script import Script, p2pk_script, p2ms_script, p2sh_script
 from src.ecdsa import Secp256k1, PrivateKey
 
 
@@ -91,7 +91,7 @@ class CTx:
         return int.from_bytes(hash256(data), "big")
     
 
-    def sign_transaction(self, input_index: int, private_keys: list[int], redeem_script: "Script" = None, number_pub_keys_required: int = 1, number_pub_keys_available: int = 1):
+    def sign_transaction(self, input_index: int, private_keys: list[int], redeem_script: "Script" = None, number_pub_keys_required: int = 1, number_pub_keys_available: int = 1, original_script: "Script" = None):
         data_to_sign =self.get_sig_hash_for_legacy_transaction(input_index, redeem_script=redeem_script)
         der_signatures_with_sighash = []
         public_keys_sec = []
@@ -108,6 +108,9 @@ class CTx:
                     script_sig = Script([der_signatures_with_sighash[index]])
                 elif redeem_script == p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available):
                     der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash
+                    script_sig = Script(der_signatures_with_sighash_new)
+                elif redeem_script == p2sh_script(hash160(p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available).serialize_script())):
+                    der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash + [bytes.fromhex(original_script.serialize_script().hex()[2:])]
                     script_sig = Script(der_signatures_with_sighash_new)
                 else:
                     script_sig = Script([der_signatures_with_sighash[index], public_key_sec])

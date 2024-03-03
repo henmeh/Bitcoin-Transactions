@@ -91,3 +91,10 @@ def encode_varint(integer: int) -> bytes:
     else:
         raise ValueError(f"integer too large: {integer}")
     return return_value
+
+
+def string_to_hex(input_string: str) -> str:
+    encoded_bytes = input_string.encode('utf-8')
+    hex_representation = encoded_bytes.hex()
+    
+    return hex_representation

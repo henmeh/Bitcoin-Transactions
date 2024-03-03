@@ -5,14 +5,14 @@ sys.path.append("/media/henning/Volume/Programming/Bitcoin/Bitcoin-Transactions/
 from test_framework.test_framework import BitcoinTestFramework
 from src.ecdsa import PrivateKey
 from src.transaction import CTx, CTxIn, CTxOut
-from src.script import Script, p2pk_script
+from src.script import Script, p2pk_script, p2ms_script
 
-class P2PKTest(BitcoinTestFramework):
+class P2MSTest(BitcoinTestFramework):
     
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
-        self.wallet_names = ["Alice", "Bob"]
+        self.wallet_names = ["Alice", "Bob", "Charlie"]
         self.options.descriptors = False
 
 
@@ -36,26 +36,29 @@ class P2PKTest(BitcoinTestFramework):
     def run_test(self):
         alice = self.nodes[0]
         bob = self.nodes[1]
+        charlie = self.nodes[2]
 
         self.init_wallet(node=0)
         self.init_wallet(node=1)
+        self.init_wallet(node=2)
 
         #Mining 101 Blocks to fund alice empyt wallet
         alice_wallet_0 = self.create_wallet_data(alice)
         alice_wallet_1 = self.create_wallet_data(alice)
         bob_wallet_1 = self.create_wallet_data(bob)
+        charlie_wallet_1 = self.create_wallet_data(charlie)
 
         self.generatetoaddress(alice, 101, alice_wallet_0["wallet_address"])
         
         alice_funding_amount = 11000     
-        alice_p2pk_funding_tx = alice.sendtoaddress(alice_wallet_1["wallet_address"], alice_funding_amount / 100000000)
-        alice_p2pk_funding_tx_serialized = alice.gettransaction(alice_p2pk_funding_tx)["hex"]
-        alice_p2pk_funding_tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(alice_p2pk_funding_tx_serialized)))
+        alice_p2ms_funding_tx = alice.sendtoaddress(alice_wallet_1["wallet_address"], alice_funding_amount / 100000000)
+        alice_p2ms_funding_tx_serialized = alice.gettransaction(alice_p2ms_funding_tx)["hex"]
+        alice_p2ms_funding_tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(alice_p2ms_funding_tx_serialized)))
 
         self.generatetoaddress(alice, 1, alice_wallet_0["wallet_address"])
         
-        alice_previous_tx_id_to_spent = alice_p2pk_funding_tx
-        for index, tx_out in enumerate(alice_p2pk_funding_tx_parsed.tx_outs):
+        alice_previous_tx_id_to_spent = alice_p2ms_funding_tx
+        for index, tx_out in enumerate(alice_p2ms_funding_tx_parsed.tx_outs):
             if tx_out.amount == alice_funding_amount:
                 alice_previous_tx_index_to_spent = index
                 alice_previous_script_pub_key_to_spent = tx_out.script_pubkey.serialize_script().hex()
@@ -64,22 +67,23 @@ class P2PKTest(BitcoinTestFramework):
         alice_amount_to_spent = 10000
         
         transaction_input = CTxIn(bytes.fromhex(alice_previous_tx_id_to_spent), alice_previous_tx_index_to_spent, script_sig=Script())
-        alice_script_pubkey = p2pk_script(bob_wallet_1["wallet_public_key"].sec_format())
+        alice_script_pubkey = p2ms_script([bob_wallet_1["wallet_public_key"].sec_format(), charlie_wallet_1["wallet_public_key"].sec_format()], 2, 2)
         transaction_output = CTxOut(alice_amount_to_spent, alice_script_pubkey)
         alice_locking_transaction = CTx(1, [transaction_input], [transaction_output], 0xffffffff, is_testnet=True, is_segwit=False)
         alice_script_sig = Script().parse_script(BytesIO(bytes.fromhex(alice_previous_script_pub_key_to_spent)))
         
         alice_locking_transaction.sign_transaction(0, [alice_wallet_1["wallet_private_key_int"]], alice_script_sig)
 
-        alice_p2pk_locking_tx = alice.sendrawtransaction(alice_locking_transaction.serialize_transaction().hex())
+        alice_p2ms_locking_tx = alice.sendrawtransaction(alice_locking_transaction.serialize_transaction().hex())
         
         self.generatetoaddress(alice, 1, alice_wallet_0["wallet_address"])
-
-        bob_previous_tx_id_to_spent = alice_p2pk_locking_tx
-        alice_p2pk_locking_tx_serialized = bob.gettransaction(alice_p2pk_locking_tx)["hex"]
-        alice_p2pk_locking_tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(alice_p2pk_locking_tx_serialized)))
-
-        for index, tx_out in enumerate(alice_p2pk_locking_tx_parsed.tx_outs):
+        
+        bob_previous_tx_id_to_spent = alice_p2ms_locking_tx
+     
+        alice_p2ms_locking_tx_serialized = alice.gettransaction(alice_p2ms_locking_tx)["hex"]
+        alice_p2ms_locking_tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(alice_p2ms_locking_tx_serialized)))
+        
+        for index, tx_out in enumerate(alice_p2ms_locking_tx_parsed.tx_outs):
             if tx_out.amount == alice_amount_to_spent:
                 bob_previous_tx_index_to_spent = index
                 bob_previous_script_pub_key_to_spent = tx_out.script_pubkey.serialize_script().hex()
@@ -93,10 +97,10 @@ class P2PKTest(BitcoinTestFramework):
         transaction_output = CTxOut(bob_amount_to_spent, script_pubkey)
         bob_spending_transaction = CTx(1, [transaction_input], [transaction_output], 0xffffffff, is_testnet=True, is_segwit=False)
         bob_script_sig = Script().parse_script(BytesIO(bytes.fromhex(bob_previous_script_pub_key_to_spent)))
-        bob_spending_transaction.sign_transaction(0, [bob_wallet_1["wallet_private_key_int"]], bob_script_sig)
+        bob_spending_transaction.sign_transaction(0, [bob_wallet_1["wallet_private_key_int"], charlie_wallet_1["wallet_private_key_int"]], bob_script_sig, 2, 2)
 
-        bob_p2pk_spending_tx = bob.sendrawtransaction(bob_spending_transaction.serialize_transaction().hex())
+        bob_p2ms_spending_tx = bob.sendrawtransaction(bob_spending_transaction.serialize_transaction().hex())
 
 
 if __name__ == '__main__':
-    P2PKTest().main()
+    P2MSTest().main()

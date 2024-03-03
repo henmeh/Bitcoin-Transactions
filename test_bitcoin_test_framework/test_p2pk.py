@@ -11,7 +11,7 @@ class P2PKTest(BitcoinTestFramework):
     
     def set_test_params(self):
         self.setup_clean_chain = True
-        self.num_nodes = 3
+        self.num_nodes = 2
         self.wallet_names = ["Alice", "Bob"]
         self.options.descriptors = False
 

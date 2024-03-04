@@ -24,6 +24,18 @@ class CTx:
 
     @classmethod
     def parse_transaction(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False, is_segwit: bool = False) -> "CTx":
+        transaction_as_byte_stream.seek(4, 1)
+        if transaction_as_byte_stream.read(1) == b"\00":
+            parsed_tx = cls.parse_transaction_segwit
+        else:
+            parsed_tx = cls.parse_transaction_legacy
+        transaction_as_byte_stream.seek(-5, 1)
+        
+        return parsed_tx(transaction_as_byte_stream, is_testnet=is_testnet, is_segwit=is_segwit)
+
+
+    @classmethod
+    def parse_transaction_legacy(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False, is_segwit: bool = False) -> "CTx":
         version = little_endian_to_int(transaction_as_byte_stream.read(4))
         number_of_inputs = read_varint(transaction_as_byte_stream)
         inputs = []
@@ -33,6 +45,35 @@ class CTx:
         outputs = []
         for _ in range(number_of_outputs):
             outputs.append(CTxOut.parse_transaction_output(transaction_as_byte_stream))
+        locktime = little_endian_to_int(transaction_as_byte_stream.read(4))
+
+        return cls(version, inputs, outputs, locktime, is_testnet=is_testnet, is_segwit=is_segwit)
+    
+
+    @classmethod
+    def parse_transaction_segwit(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False, is_segwit: bool = True) -> "CTx":
+        version = little_endian_to_int(transaction_as_byte_stream.read(4))
+        marker = transaction_as_byte_stream.read(1)
+        flag = transaction_as_byte_stream.read(1)
+        number_of_inputs = read_varint(transaction_as_byte_stream)
+        inputs = []
+        for _ in range(number_of_inputs):
+            inputs.append(CTxIn.parse_transaction_input(transaction_as_byte_stream))
+        number_of_outputs = read_varint(transaction_as_byte_stream)        
+        outputs = []
+        for _ in range(number_of_outputs):
+            outputs.append(CTxOut.parse_transaction_output(transaction_as_byte_stream))
+        #now the witness data stack
+        for tx_input in inputs:
+            num_witness_data = read_varint(transaction_as_byte_stream)
+            items = []
+            for _ in range(num_witness_data):
+                item_length = read_varint(transaction_as_byte_stream)
+                if item_length == 0:
+                    items.append(0)
+                else:
+                    items.append(transaction_as_byte_stream.read(item_length))
+            tx_input.witness = items
         locktime = little_endian_to_int(transaction_as_byte_stream.read(4))
 
         return cls(version, inputs, outputs, locktime, is_testnet=is_testnet, is_segwit=is_segwit)
@@ -131,11 +172,12 @@ class CTx:
     
         
 class CTxIn:
-    def __init__(self, previous_transaction_id: bytes, previous_transaction_index: int, script_sig: "Script" = None, sequence: int = 0xffffffff):
+    def __init__(self, previous_transaction_id: bytes, previous_transaction_index: int, script_sig: "Script" = None, sequence: int = 0xffffffff, witness: list = None):
         self.previous_transaction_id = previous_transaction_id
         self.previous_transaction_index = previous_transaction_index
         self.script_sig = script_sig
         self.sequence = sequence
+        self.witness = witness
 
     
     @classmethod

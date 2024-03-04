@@ -16,6 +16,10 @@ class TestTransaction:
     tx = CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy)))
     test_serialize_transaction_parameter = [(tx.serialize_transaction().hex(),test_transaction_legacy)]
 
+    test_transaction_segwit = "02000000000101102e92fdf555717908d12243868fadd92b7ac44a1d415bc9c9f4bcc41d1a9dcc0000000000feffffff02f82a000000000000160014231f90603ec02658e7f4e9e03d1b387da21cd61afdc0042a0100000016001483b6c3f7e8914ea252e4afc5bd2318c1b11f120f0247304402200101aa1b1787e0bb54eec064b1faa88e2970e6c00056914a4d8d6f249453f3c002207485f7ea06e8e50d3e4c0595b76f80f1c54af5590135b4156afe2a4641df82b3012102af88e7102c47de6ba6b2e6ae69a3da1f0c43747867dd9dbe4a7beb221358e8b500000000"
+    segwit_tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_segwit)))
+    test_parse_segwit_witness_data_parameter = [(segwit_tx_parsed.tx_ins[0].witness, ["304402200101aa1b1787e0bb54eec064b1faa88e2970e6c00056914a4d8d6f249453f3c002207485f7ea06e8e50d3e4c0595b76f80f1c54af5590135b4156afe2a4641df82b301", "02af88e7102c47de6ba6b2e6ae69a3da1f0c43747867dd9dbe4a7beb221358e8b5"])]
+
     
     test_get_fee_parameter = [(CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).get_fee(), 40000)]
 
@@ -32,27 +36,32 @@ class TestTransaction:
 
     @pytest.mark.parametrize("parsed_tx_value, expected_tx_value", test_parse_version_parameter)
     def test_parse_version(self, parsed_tx_value, expected_tx_value):
-        assert parsed_tx_value == expected_tx_value
+       assert parsed_tx_value == expected_tx_value
 
 
     @pytest.mark.parametrize("parsed_locktime_value, expected_locktime_value", test_parse_locktime_parameter)
     def test_parse_locktime(self, parsed_locktime_value, expected_locktime_value):
         assert parsed_locktime_value == expected_locktime_value
     
+
+    @pytest.mark.parametrize("parsed_witness_data, expected_witness_data", test_parse_segwit_witness_data_parameter)
+    def test_parse_segwit_witness_data(self, parsed_witness_data, expected_witness_data):
+        for i in range(len(parsed_witness_data)):
+            assert parsed_witness_data[i].hex() == expected_witness_data[i]
+    
     
     @pytest.mark.parametrize("serialized_value, serialized_expected", test_serialize_transaction_parameter)
     def test_serialize_transaction(self, serialized_value, serialized_expected):
         assert serialized_value == serialized_expected
 
+    
+
+    
+
 
     @pytest.mark.parametrize("get_fee_calculated, get_fee_expected", test_get_fee_parameter)
     def test_get_fee(self, get_fee_calculated, get_fee_expected):
         assert get_fee_calculated == get_fee_expected
-
-
-    @pytest.mark.skip(reason="Transaction validation is not fully supported at the moment")
-    def test_verify_transaction(self):
-        assert 1 == 1
 
 
     @pytest.mark.parametrize("sig_hash_calculated, sig_hash_expected", test_get_sig_hash_for_legacy_transaction_parameter)

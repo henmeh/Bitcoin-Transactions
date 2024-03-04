@@ -2,7 +2,6 @@ from io import BytesIO
 
 import pytest
 from src.transaction import CTx, CTxIn
-from src.ecdsa import PrivateKey
 
 
 class TestTransaction:
@@ -14,12 +13,13 @@ class TestTransaction:
     test_parse_locktime_parameter = [(CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).locktime, 410393)]
 
     tx = CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy)))
-    test_serialize_transaction_parameter = [(tx.serialize_transaction().hex(),test_transaction_legacy)]
+    test_serialize_transaction_legacy_parameter = [(tx.serialize_transaction().hex(), test_transaction_legacy)]
 
     test_transaction_segwit = "02000000000101102e92fdf555717908d12243868fadd92b7ac44a1d415bc9c9f4bcc41d1a9dcc0000000000feffffff02f82a000000000000160014231f90603ec02658e7f4e9e03d1b387da21cd61afdc0042a0100000016001483b6c3f7e8914ea252e4afc5bd2318c1b11f120f0247304402200101aa1b1787e0bb54eec064b1faa88e2970e6c00056914a4d8d6f249453f3c002207485f7ea06e8e50d3e4c0595b76f80f1c54af5590135b4156afe2a4641df82b3012102af88e7102c47de6ba6b2e6ae69a3da1f0c43747867dd9dbe4a7beb221358e8b500000000"
     segwit_tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_segwit)))
     test_parse_segwit_witness_data_parameter = [(segwit_tx_parsed.tx_ins[0].witness, ["304402200101aa1b1787e0bb54eec064b1faa88e2970e6c00056914a4d8d6f249453f3c002207485f7ea06e8e50d3e4c0595b76f80f1c54af5590135b4156afe2a4641df82b301", "02af88e7102c47de6ba6b2e6ae69a3da1f0c43747867dd9dbe4a7beb221358e8b5"])]
 
+    test_serialize_transaction_segwit_parameter = [(segwit_tx_parsed.serialize_transaction().hex(), test_transaction_segwit)]
     
     test_get_fee_parameter = [(CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_legacy))).get_fee(), 40000)]
 
@@ -50,13 +50,14 @@ class TestTransaction:
             assert parsed_witness_data[i].hex() == expected_witness_data[i]
     
     
-    @pytest.mark.parametrize("serialized_value, serialized_expected", test_serialize_transaction_parameter)
-    def test_serialize_transaction(self, serialized_value, serialized_expected):
+    @pytest.mark.parametrize("serialized_value, serialized_expected", test_serialize_transaction_legacy_parameter)
+    def test_serialize_transaction_legacy(self, serialized_value, serialized_expected):
         assert serialized_value == serialized_expected
 
     
-
-    
+    @pytest.mark.parametrize("serialized_value, serialized_expected", test_serialize_transaction_segwit_parameter)
+    def test_serialize_transaction_segwit(self, serialized_value, serialized_expected):
+        assert serialized_value == serialized_expected
 
 
     @pytest.mark.parametrize("get_fee_calculated, get_fee_expected", test_get_fee_parameter)

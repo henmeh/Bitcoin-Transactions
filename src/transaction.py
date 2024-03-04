@@ -9,13 +9,15 @@ from src.ecdsa import Secp256k1, PrivateKey
 
 
 class CTx:
-    def __init__(self, version: int, tx_ins: list["CTxIn"], tx_outs: list["CTxOut"], locktime: int, is_testnet: bool, is_segwit:bool):
+    def __init__(self, version: int, tx_ins: list["CTxIn"], tx_outs: list["CTxOut"], locktime: int, is_testnet: bool, is_segwit:bool, marker: bytes = None, flag: bytes = None):
         self.version = version
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
         self.locktime = locktime
         self.is_testnet = is_testnet
         self.is_segwit = is_segwit
+        self.marker = marker
+        self.flag = flag
 
     
     def id(self):
@@ -23,7 +25,7 @@ class CTx:
     
 
     @classmethod
-    def parse_transaction(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False, is_segwit: bool = False) -> "CTx":
+    def parse_transaction(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False) -> "CTx":
         transaction_as_byte_stream.seek(4, 1)
         if transaction_as_byte_stream.read(1) == b"\00":
             parsed_tx = cls.parse_transaction_segwit
@@ -31,11 +33,11 @@ class CTx:
             parsed_tx = cls.parse_transaction_legacy
         transaction_as_byte_stream.seek(-5, 1)
         
-        return parsed_tx(transaction_as_byte_stream, is_testnet=is_testnet, is_segwit=is_segwit)
+        return parsed_tx(transaction_as_byte_stream, is_testnet=is_testnet)
 
 
     @classmethod
-    def parse_transaction_legacy(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False, is_segwit: bool = False) -> "CTx":
+    def parse_transaction_legacy(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False) -> "CTx":
         version = little_endian_to_int(transaction_as_byte_stream.read(4))
         number_of_inputs = read_varint(transaction_as_byte_stream)
         inputs = []
@@ -47,11 +49,11 @@ class CTx:
             outputs.append(CTxOut.parse_transaction_output(transaction_as_byte_stream))
         locktime = little_endian_to_int(transaction_as_byte_stream.read(4))
 
-        return cls(version, inputs, outputs, locktime, is_testnet=is_testnet, is_segwit=is_segwit)
+        return cls(version, inputs, outputs, locktime, is_testnet=is_testnet, is_segwit=False)
     
 
     @classmethod
-    def parse_transaction_segwit(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False, is_segwit: bool = True) -> "CTx":
+    def parse_transaction_segwit(cls, transaction_as_byte_stream: BytesIO, is_testnet: bool = False) -> "CTx":
         version = little_endian_to_int(transaction_as_byte_stream.read(4))
         marker = transaction_as_byte_stream.read(1)
         flag = transaction_as_byte_stream.read(1)
@@ -76,10 +78,17 @@ class CTx:
             tx_input.witness = items
         locktime = little_endian_to_int(transaction_as_byte_stream.read(4))
 
-        return cls(version, inputs, outputs, locktime, is_testnet=is_testnet, is_segwit=is_segwit)
+        return cls(version, inputs, outputs, locktime, is_testnet=is_testnet, is_segwit=True, marker=marker, flag=flag)
     
 
     def serialize_transaction(self):
+        if self.is_segwit:
+            return self.serialize_transaction_segwit()
+        else:
+            return self.serialize_transaction_legacy()
+    
+
+    def serialize_transaction_legacy(self):
         transaction = int_to_little_endian(self.version, 4)
         transaction += encode_varint(len(self.tx_ins))
         for tx_in in self.tx_ins:
@@ -87,6 +96,30 @@ class CTx:
         transaction += encode_varint(len(self.tx_outs))
         for tx_out in self.tx_outs:
             transaction += tx_out.serialize_transaction_output()
+        transaction += int_to_little_endian(self.locktime, 4)
+
+        return transaction
+
+
+    def serialize_transaction_segwit(self):
+        transaction = int_to_little_endian(self.version, 4)
+        transaction += self.marker
+        transaction += self.flag
+        transaction += encode_varint(len(self.tx_ins))
+        for tx_in in self.tx_ins:
+            transaction += tx_in.serialize_transaction_input()
+        transaction += encode_varint(len(self.tx_outs))
+        for tx_out in self.tx_outs:
+            transaction += tx_out.serialize_transaction_output()
+        #now the witness stack
+        for tx_in in self.tx_ins:
+            transaction += int_to_little_endian(len(tx_in.witness), 1)
+            for item in tx_in.witness:
+                if isinstance(item, int):
+                    transaction += int_to_little_endian(item, 1)
+                else:
+                    transaction += encode_varint(len(item)) + item           
+
         transaction += int_to_little_endian(self.locktime, 4)
 
         return transaction

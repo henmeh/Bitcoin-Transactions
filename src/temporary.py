@@ -1,9 +1,14 @@
 import sys
+from io import BytesIO
 
 sys.path.append("/media/henning/Volume/Programming/Bitcoin/Bitcoin-Transactions/")
 
 from src.ecdsa import PrivateKey
+from src.transaction import CTx, CTxIn, CTxOut
 
-test = PrivateKey.convert_wif_format("cVgAfaNWLeHR4fGgERYwVmYUwZ51D3d3BzFkxszxYdDG9vw99hLn")
 
-print(test.get_private_key_int())
+test_transaction_segwit = "02000000000101102e92fdf555717908d12243868fadd92b7ac44a1d415bc9c9f4bcc41d1a9dcc0000000000feffffff02f82a000000000000160014231f90603ec02658e7f4e9e03d1b387da21cd61afdc0042a0100000016001483b6c3f7e8914ea252e4afc5bd2318c1b11f120f0247304402200101aa1b1787e0bb54eec064b1faa88e2970e6c00056914a4d8d6f249453f3c002207485f7ea06e8e50d3e4c0595b76f80f1c54af5590135b4156afe2a4641df82b3012102af88e7102c47de6ba6b2e6ae69a3da1f0c43747867dd9dbe4a7beb221358e8b500000000"
+segwit_tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(test_transaction_segwit)))
+
+
+print(segwit_tx_parsed.is_segwit)

@@ -1,4 +1,6 @@
 from io import BytesIO
+import json
+
 
 import pytest
 from src.transaction import CTx, CTxIn
@@ -120,3 +122,13 @@ class TestTransactionOutputs:
     @pytest.mark.parametrize("parsed_output_value, expected_output_value", test_parse_outputs_parameter)
     def test_parse_outputs(self, parsed_output_value, expected_output_value):
         assert parsed_output_value == expected_output_value
+
+
+class TestTransactionSegWit:
+
+    def test_sighash(self):
+        with open('test/sighash_test_data.json', 'r') as f:
+            data = json.load(f)
+            tx_parsed = CTx.parse_transaction(BytesIO(bytes.fromhex(data[0][0])))
+
+            assert hex(tx_parsed.get_sig_hash_for_segwit_transaction(data[0][1], data[0][2]*100000000, script_pubkey=data[0][3]))[2:] == data[0][4]

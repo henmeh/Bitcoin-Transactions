@@ -4,7 +4,7 @@ from io import BytesIO
 
 from src.helper import little_endian_to_int, read_varint, int_to_little_endian, encode_varint, SIGHASH_ALL
 from src.crypto import hash256, hash160
-from src.script import Script, p2pk_script, p2ms_script, p2sh_script
+from src.script import Script, p2pk_script, p2ms_script, p2sh_script, p2pkh_script
 from src.ecdsa import Secp256k1, PrivateKey
 
 
@@ -21,7 +21,7 @@ class CTx:
 
     
     def id(self):
-        return hash256(self.serialize_transaction())[::-1]
+        return hash256(self.serialize_transaction_legacy())[::-1]
     
 
     @classmethod
@@ -164,6 +164,73 @@ class CTx:
 
         return int.from_bytes(hash256(data), "big")
     
+
+    def hash_prevouts(self):
+        all_prevouts = b''
+        for tx_in in self.tx_ins:
+            all_prevouts += tx_in.previous_transaction_id[::-1] + int_to_little_endian(tx_in.previous_transaction_index, 4)
+        hash_prevouts = hash256(all_prevouts)
+        return hash_prevouts
+
+
+    def hash_sequence(self):
+        all_prev_sequence = b''
+        for tx_in in self.tx_ins:
+            all_prev_sequence += int_to_little_endian(tx_in.sequence, 4)
+        hash_prev_sequence = hash256(all_prev_sequence)
+        return hash_prev_sequence
+    
+
+    def hash_outputs(self):
+        all_outputs = b''
+        for tx_out in self.tx_outs:
+            all_outputs += tx_out.serialize_transaction_output()
+        hash_outputs = hash256(all_outputs)
+        return hash_outputs
+            
+
+    def get_sig_hash_for_segwit_transaction(self, input_index: int, input_amount: int, script_pubkey: "Script" = None) -> int:
+        """
+        generating sig hash according to BIP143
+            1. nVersion of the transaction (4-byte little endian)                   check
+            2. hashPrevouts (32-byte hash)                                          check
+            3. hashSequence (32-byte hash)                                          check
+            4. outpoint (32-byte hash + 4-byte little endian)                       check -> tx_id und tx_index des segwit inputs
+            5. scriptCode of the input (serialized as scripts inside CTxOuts)       check
+            6. value of the output spent by this input (8-byte little endian)       check   
+            7. nSequence of the input (4-byte little endian)                        check
+            8. hashOutputs (32-byte hash)                                           check
+            9. nLocktime of the transaction (4-byte little endian)                  check
+            10. sighash type of the signature (4-byte little endian)                check
+        """
+        tx_in = self.tx_ins[input_index]
+        
+        data = int_to_little_endian(self.version, 4)
+        data += self.hash_prevouts()
+        data += self.hash_sequence()
+        data += tx_in.previous_transaction_id[::-1] + int_to_little_endian(tx_in.previous_transaction_index, 4)        
+        if script_pubkey is not None:
+            if isinstance(script_pubkey, Script):
+                if script_pubkey.serialize_script()[1] == 0 and len(script_pubkey.serialize_script()[3:]) == 20:
+                    script_code = Script([0x19, 0x76, 0xa9, script_pubkey.serialize_script()[3:], 0x88, 0xac]).serialize_script()[1:]
+            else:
+                script_code = Script([0x19, 0x76, 0xa9, bytes.fromhex(script_pubkey[4:]), 0x88, 0xac]).serialize_script()[1:]
+        #elif redeem_script:
+        #    script_code = p2pkh_script(redeem_script.cmds[1]).serialize_script()
+        #else:
+        #    script_code = p2pkh_script(tx_in.get_script_pubkey(is_testnet=True).cmds[1]).serialize_script()
+        data += script_code
+        print(script_code.hex())
+        data += int_to_little_endian(input_amount, 8)
+        data += int_to_little_endian(tx_in.sequence, 4)
+        data += self.hash_outputs()
+        data += int_to_little_endian(self.locktime, 4)
+        data += int_to_little_endian(SIGHASH_ALL, 4)
+
+        print(data.hex() == "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd3752b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3bef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a010000001976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac0046c32300000000ffffffff863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e51100000001000000")
+
+        return int.from_bytes(hash256(data), 'big')
+
 
     def sign_transaction(self, input_index: int, private_keys: list[int], redeem_script: "Script" = None, number_pub_keys_required: int = 1, number_pub_keys_available: int = 1, original_script: "Script" = None):
         public_keys_sec = []

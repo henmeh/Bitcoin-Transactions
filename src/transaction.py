@@ -9,7 +9,7 @@ from src.ecdsa import Secp256k1, PrivateKey
 
 
 class CTx:
-    def __init__(self, version: int, tx_ins: list["CTxIn"], tx_outs: list["CTxOut"], locktime: int, is_testnet: bool, is_segwit:bool, marker: bytes = None, flag: bytes = None):
+    def __init__(self, version: int, tx_ins: list["CTxIn"], tx_outs: list["CTxOut"], locktime: int, is_testnet: bool, is_segwit:bool, marker: bytes = b'\x00', flag: bytes = b'\x01'):
         self.version = version
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
@@ -135,14 +135,14 @@ class CTx:
         return input_sum - output_sum
     
 
-    def get_sig_hash_for_legacy_transaction(self, input_index: int, redeem_script: "Script" = None) -> int:
+    def get_sig_hash_for_legacy_transaction(self, input_index: int, previous_script_pubkey: "Script" = None) -> int:
         data = int_to_little_endian(self.version, 4)
         data += encode_varint(len(self.tx_ins))
 
         for index, tx_in in enumerate(self.tx_ins):
             if index == input_index:
-                if redeem_script:
-                    script_sig = redeem_script
+                if previous_script_pubkey:
+                    script_sig = previous_script_pubkey
                 else:
                     script_sig = tx_in.get_script_pubkey(self.is_testnet)
             else:
@@ -215,35 +215,30 @@ class CTx:
                     script_code = Script([0x19, 0x76, 0xa9, script_pubkey.serialize_script()[3:], 0x88, 0xac]).serialize_script()[1:]
             else:
                 script_code = Script([0x19, 0x76, 0xa9, bytes.fromhex(script_pubkey[4:]), 0x88, 0xac]).serialize_script()[1:]
-        #elif redeem_script:
-        #    script_code = p2pkh_script(redeem_script.cmds[1]).serialize_script()
-        #else:
-        #    script_code = p2pkh_script(tx_in.get_script_pubkey(is_testnet=True).cmds[1]).serialize_script()
         data += script_code
-        print(script_code.hex())
         data += int_to_little_endian(input_amount, 8)
         data += int_to_little_endian(tx_in.sequence, 4)
         data += self.hash_outputs()
         data += int_to_little_endian(self.locktime, 4)
         data += int_to_little_endian(SIGHASH_ALL, 4)
 
-        print(data.hex() == "0100000096b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd3752b0a642eea2fb7ae638c36f6252b6750293dbe574a806984b8e4d8548339a3bef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a010000001976a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac0046c32300000000ffffffff863ef3e1a92afbfdb97f31ad0fc7683ee943e9abcf2501590ff8f6551f47e5e51100000001000000")
-
         return int.from_bytes(hash256(data), 'big')
 
 
-    def sign_transaction(self, input_index: int, private_keys: list[int], redeem_script: "Script" = None, number_pub_keys_required: int = 1, number_pub_keys_available: int = 1, original_script: "Script" = None):
+    def sign_transaction(self, input_index: int, private_keys: list[int], previous_script_pubkey: "Script" = None, number_pub_keys_required: int = 1, number_pub_keys_available: int = 1, redeem_script: "Script" = None, input_amount: int = 0):
         public_keys_sec = []
         for private_key in private_keys:
             public_keys_sec.append(PrivateKey(private_key).get_public_key().sec_format())
 
-        if redeem_script is not None:
-            if redeem_script == p2sh_script(hash160(bytes.fromhex(p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available).serialize_script().hex()[2:]))):
-                data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, redeem_script=original_script)
+        if previous_script_pubkey is not None:
+            if previous_script_pubkey == p2sh_script(hash160(bytes.fromhex(p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available).serialize_script().hex()[2:]))):
+                data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, previous_script_pubkey=redeem_script)
+            elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 20:
+                data_to_sign = self.get_sig_hash_for_segwit_transaction(input_index, input_amount, previous_script_pubkey)
             else:
-                data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, redeem_script=redeem_script)    
+                data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, previous_script_pubkey=previous_script_pubkey)    
         else:
-            data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, redeem_script=redeem_script)
+            data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, previous_script_pubkey=previous_script_pubkey)
         
         der_signatures_with_sighash = []
         
@@ -254,15 +249,18 @@ class CTx:
             
         
         for index, public_key_sec in enumerate(public_keys_sec):
-            if redeem_script is not None:
-                if redeem_script == p2pk_script(public_key_sec):
+            if previous_script_pubkey is not None:
+                if previous_script_pubkey == p2pk_script(public_key_sec):
                     script_sig = Script([der_signatures_with_sighash[index]])
-                elif redeem_script == p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available):
+                elif previous_script_pubkey == p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available):
                     der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash
                     script_sig = Script(der_signatures_with_sighash_new)
-                elif redeem_script == p2sh_script(hash160(bytes.fromhex(p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available).serialize_script().hex()[2:]))):
-                    der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash + [bytes.fromhex(original_script.serialize_script().hex()[2:])]
+                elif previous_script_pubkey == p2sh_script(hash160(bytes.fromhex(p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available).serialize_script().hex()[2:]))):
+                    der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash + [bytes.fromhex(redeem_script.serialize_script().hex()[2:])]
                     script_sig = Script(der_signatures_with_sighash_new)
+                elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 20:
+                    script_sig = Script([])
+                    self.tx_ins[input_index].witness = der_signatures_with_sighash + [public_key_sec]
                 else:
                     script_sig = Script([der_signatures_with_sighash[index], public_key_sec])
             else:
@@ -272,7 +270,7 @@ class CTx:
     
         
 class CTxIn:
-    def __init__(self, previous_transaction_id: bytes, previous_transaction_index: int, script_sig: "Script" = None, sequence: int = 0xffffffff, witness: list = None):
+    def __init__(self, previous_transaction_id: bytes, previous_transaction_index: int, script_sig: "Script" = None, sequence: int = 0xffffffff, witness: list = []):
         self.previous_transaction_id = previous_transaction_id
         self.previous_transaction_index = previous_transaction_index
         self.script_sig = script_sig

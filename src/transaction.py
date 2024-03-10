@@ -213,6 +213,8 @@ class CTx:
             if isinstance(script_pubkey, Script):
                 if script_pubkey.serialize_script()[1] == 0 and len(script_pubkey.serialize_script()[3:]) == 20:
                     script_code = Script([0x19, 0x76, 0xa9, script_pubkey.serialize_script()[3:], 0x88, 0xac]).serialize_script()[1:]
+                else:
+                    script_code = script_pubkey.serialize_script()
             else:
                 script_code = Script([0x19, 0x76, 0xa9, bytes.fromhex(script_pubkey[4:]), 0x88, 0xac]).serialize_script()[1:]
         data += script_code
@@ -235,6 +237,8 @@ class CTx:
                 data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, previous_script_pubkey=redeem_script)
             elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 20:
                 data_to_sign = self.get_sig_hash_for_segwit_transaction(input_index, input_amount, previous_script_pubkey)
+            elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 32:
+                data_to_sign = self.get_sig_hash_for_segwit_transaction(input_index, input_amount, redeem_script)
             else:
                 data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, previous_script_pubkey=previous_script_pubkey)    
         else:
@@ -253,14 +257,16 @@ class CTx:
                 if previous_script_pubkey == p2pk_script(public_key_sec):
                     script_sig = Script([der_signatures_with_sighash[index]])
                 elif previous_script_pubkey == p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available):
-                    der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash
-                    script_sig = Script(der_signatures_with_sighash_new)
+                    script_sig = Script([bytes(0x0)] + der_signatures_with_sighash)
                 elif previous_script_pubkey == p2sh_script(hash160(bytes.fromhex(p2ms_script(public_keys_sec, number_pub_keys_required, number_pub_keys_available).serialize_script().hex()[2:]))):
                     der_signatures_with_sighash_new = [bytes(0x0)] + der_signatures_with_sighash + [bytes.fromhex(redeem_script.serialize_script().hex()[2:])]
                     script_sig = Script(der_signatures_with_sighash_new)
                 elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 20:
                     script_sig = Script([])
                     self.tx_ins[input_index].witness = der_signatures_with_sighash + [public_key_sec]
+                elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 32:
+                    script_sig = Script([])
+                    self.tx_ins[input_index].witness = [bytes(0x0)] + der_signatures_with_sighash + [bytes.fromhex(redeem_script.serialize_script().hex()[2:])]
                 else:
                     script_sig = Script([der_signatures_with_sighash[index], public_key_sec])
             else:

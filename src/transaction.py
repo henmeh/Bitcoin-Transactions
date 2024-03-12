@@ -237,6 +237,8 @@ class CTx:
                 data_to_sign = self.get_sig_hash_for_legacy_transaction(input_index, previous_script_pubkey=redeem_script)
             elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 20:
                 data_to_sign = self.get_sig_hash_for_segwit_transaction(input_index, input_amount, previous_script_pubkey)
+            elif redeem_script is not None and redeem_script.serialize_script()[1] == 0 and len(redeem_script.serialize_script()[3:]) == 20:
+                data_to_sign = self.get_sig_hash_for_segwit_transaction(input_index, input_amount, redeem_script)
             elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 32:
                 data_to_sign = self.get_sig_hash_for_segwit_transaction(input_index, input_amount, redeem_script)
             else:
@@ -264,6 +266,9 @@ class CTx:
                 elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 20:
                     script_sig = Script([])
                     self.tx_ins[input_index].witness = der_signatures_with_sighash + [public_key_sec]
+                elif redeem_script is not None and redeem_script.serialize_script()[1] == 0 and len(redeem_script.serialize_script()[3:]) == 20:
+                    script_sig = Script([bytes.fromhex(redeem_script.serialize_script().hex()[2:])])
+                    self.tx_ins[input_index].witness = der_signatures_with_sighash + [public_key_sec]    
                 elif previous_script_pubkey.serialize_script()[1] == 0 and len(previous_script_pubkey.serialize_script()[3:]) == 32:
                     script_sig = Script([])
                     self.tx_ins[input_index].witness = [bytes(0x0)] + der_signatures_with_sighash + [bytes.fromhex(redeem_script.serialize_script().hex()[2:])]

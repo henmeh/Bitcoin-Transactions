@@ -50,7 +50,7 @@ class P2WSHTest(BitcoinTestFramework):
         charlie_wallet_1 = self.create_wallet_data(charlie)
 
         bob_and_charlie_skript = p2ms_script([bob_wallet_1["wallet_public_key"].sec_format(), charlie_wallet_1["wallet_public_key"].sec_format()], 2, 2)
-        bob_and_charlie_skript_hash160 = sha256(bytes.fromhex(bob_and_charlie_skript.serialize_script().hex()[2:]))
+        bob_and_charlie_skript_sha256 = sha256(bytes.fromhex(bob_and_charlie_skript.serialize_script().hex()[2:]))
 
         self.generatetoaddress(alice, 101, alice_wallet_0["wallet_address"])
         
@@ -71,7 +71,7 @@ class P2WSHTest(BitcoinTestFramework):
         alice_amount_to_spent = 10000
         
         transaction_input = CTxIn(bytes.fromhex(alice_previous_tx_id_to_spent), alice_previous_tx_index_to_spent, script_sig=Script())
-        alice_script_pubkey = p2wsh_script(bob_and_charlie_skript_hash160)
+        alice_script_pubkey = p2wsh_script(bob_and_charlie_skript_sha256)
         transaction_output = CTxOut(alice_amount_to_spent, alice_script_pubkey)
         alice_locking_transaction = CTx(1, [transaction_input], [transaction_output], 0xffffffff, is_testnet=True, is_segwit=False)
         alice_script_sig = Script().parse_script(BytesIO(bytes.fromhex(alice_previous_script_pub_key_to_spent)))
@@ -102,6 +102,9 @@ class P2WSHTest(BitcoinTestFramework):
         bob_spending_transaction = CTx(1, [transaction_input], [transaction_output], 0xffffffff, is_testnet=True, is_segwit=True)
         bob_script_sig = Script().parse_script(BytesIO(bytes.fromhex(bob_previous_script_pub_key_to_spent)))
         bob_spending_transaction.sign_transaction(0, [bob_wallet_1["wallet_private_key_int"], charlie_wallet_1["wallet_private_key_int"]], bob_script_sig, 2, 2, bob_and_charlie_skript, input_amount=alice_amount_to_spent)
+
+        print(bob_spending_transaction.serialize_transaction().hex())
+
 
         bob_p2wsh_spending_tx = bob.sendrawtransaction(bob_spending_transaction.serialize_transaction().hex())
 
